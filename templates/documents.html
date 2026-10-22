@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Storage - DocSphere AI</title>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-sm);
+            background: var(--primary-glow);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: var(--font-heading);
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .filter-bar {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+        }
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            flex: 1;
+        }
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 240px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 0.65rem 1rem 0.65rem 2.4rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-surface-solid);
+            color: var(--text-primary);
+            font-size: 0.88rem;
+            outline: none;
+            transition: var(--transition);
+        }
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+        .search-box i {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .select-filter {
+            padding: 0.65rem 1rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-surface-solid);
+            color: var(--text-primary);
+            font-size: 0.88rem;
+            outline: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .select-filter:focus {
+            border-color: var(--primary);
+        }
+        .company-badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 9999px;
+            padding: 0.2rem 0.65rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .format-badge {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: 4px;
+            letter-spacing: 0.03em;
+        }
+        .format-pdf { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .format-docx { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .format-html { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .format-xbrl, .format-xml { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .format-txt { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+            box-shadow: var(--shadow);
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        th, td {
+            padding: 0.85rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        th {
+            background: rgba(0, 0, 0, 0.25);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+        tr {
+            transition: var(--transition);
+        }
+        tr:hover {
+            background: var(--bg-hover);
+        }
+        .doc-icon-wrapper {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+        .doc-row-title {
+            display: flex;
+            align-items: center;
+        }
+        .action-btn-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+        }
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-surface-solid);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .action-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        .action-btn.btn-download:hover {
+            color: #38bdf8;
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.15);
+        }
+        .action-btn.btn-rename:hover {
+            color: #fbbf24;
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.15);
+        }
+        /* Prominent Red Delete Button */
+        .action-btn.btn-delete {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #f87171;
+        }
+        .action-btn.btn-delete:hover {
+            color: #ffffff;
+            border-color: #ef4444;
+            background: #ef4444;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+        }
+        .action-btn.btn-chat:hover {
+            color: #34d399;
+            border-color: #34d399;
+            background: var(--primary-glow);
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Top Header Navigation -->
+    <header>
+        <a href="/" class="logo-container">
+            <div class="logo-icon"><i class="fas fa-layer-group"></i></div>
+            <h1 class="logo-text">DocSphere AI</h1>
+        </a>
+
+        <!-- Center Navigation Tabs -->
+        <div class="nav-tabs-wrapper">
+            <a href="/" class="nav-tab-link">
+                <i class="fas fa-cloud-upload-alt"></i> Upload & Ingest
+            </a>
+            <a href="/documents" class="nav-tab-link active">
+                <i class="fas fa-folder-open"></i> Document Storage
+            </a>
+            <a href="/chat" class="nav-tab-link">
+                <i class="fas fa-comments"></i> RAG Chatbot
+            </a>
+            <a href="/database" class="nav-tab-link">
+                <i class="fas fa-database"></i> Database
+            </a>
+        </div>
+
+        <div class="header-actions">
+            <button id="theme-toggle" class="btn btn-secondary btn-icon" title="Toggle Light/Dark Theme">
+                <i class="fas fa-sun"></i>
+            </button>
+            <a href="/chat" class="btn btn-primary">
+                <i class="fas fa-comments"></i> Launch Chat
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container" style="max-width: 1380px; margin: 1.75rem auto; padding: 0 1.5rem; width: 100%; flex: 1;">
+        
+        <!-- Header Banner -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="font-size: 1.75rem; font-family: var(--font-heading); font-weight: 700; margin-bottom: 0.35rem;">
+                    <i class="fas fa-database text-emerald-500 mr-2"></i> Document Storage & Repository
+                </h1>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Centralized archive of all uploaded enterprise documents. Manage, rename, inspect, or download source files.
+                </p>
+            </div>
+            <div>
+                <a href="/" class="btn btn-primary" style="text-decoration: none;">
+                    <i class="fas fa-plus" style="text-decoration: none;"></i> Upload New Documents
+                </a>
+            </div>
+        </div>
+
+        <!-- Platform Summary Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-file-invoice"></i></div>
+                <div>
+                    <div class="stat-value" id="stat-total-docs">{{ documents|length }}</div>
+                    <div class="stat-label">Stored Documents</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #60a5fa; background: rgba(59, 130, 246, 0.15);"><i class="fas fa-building"></i></div>
+                <div>
+                    <div class="stat-value">{{ companies|length }}</div>
+                    <div class="stat-label">Organizations Tagged</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #fbbf24; background: rgba(245, 158, 11, 0.15);"><i class="fas fa-layer-group"></i></div>
+                <div>
+                    {% set total_chunks = namespace(value=0) %}
+                    {% for doc in documents %}
+                        {% set total_chunks.value = total_chunks.value + doc.chunk_count %}
+                    {% endfor %}
+                    <div class="stat-value" id="stat-total-chunks">{{ total_chunks.value }}</div>
+                    <div class="stat-label">Indexed Vector Chunks</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.15);"><i class="fas fa-file-shield"></i></div>
+                <div>
+                    <div class="stat-value">FAISS + BM25</div>
+                    <div class="stat-label">Hybrid Search Indexed</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="filter-bar">
+            <div class="filter-controls">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="doc-search-input" placeholder="Search by document name or keyword..." autocomplete="off">
+                </div>
+                <select id="org-filter-select" class="select-filter">
+                    <option value="">All Organizations ({{ companies|length }})</option>
+                    {% for c in companies %}
+                        <option value="{{ c.name }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+                <select id="format-filter-select" class="select-filter">
+                    <option value="">All Formats</option>
+                    <option value="pdf">PDF (.pdf)</option>
+                    <option value="docx">Word (.docx)</option>
+                    <option value="html">HTML (.html)</option>
+                    <option value="xbrl">XBRL / XML</option>
+                    <option value="txt">Text (.txt)</option>
+                </select>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">
+                Showing <strong id="visible-count" style="color: var(--text-primary);">{{ documents|length }}</strong> of {{ documents|length }} files
+            </div>
+        </div>
+
+        <!-- Document Storage Table -->
+        <div class="table-responsive">
+            <table id="documents-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 220px;">Document Name</th>
+                        <th style="width: 120px;">Organization</th>
+                        <th style="width: 75px; text-align: center;">Format</th>
+                        <th style="width: 85px;">Size</th>
+                        <th style="width: 80px; text-align: center;">Pages</th>
+                        <th style="width: 120px;">Chunks</th>
+                        <th style="width: 110px; white-space: nowrap;">Uploaded</th>
+                        <th style="text-align: center; width: 175px; min-width: 175px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="documents-tbody">
+                    {% if documents %}
+                        {% for doc in documents %}
+                        {% set ext = doc.file_type|lower %}
+                        <tr id="doc-row-{{ doc.id }}" 
+                            data-doc-id="{{ doc.id }}" 
+                            data-doc-name="{{ doc.original_name|lower }}" 
+                            data-doc-org="{{ doc.company_name|lower }}" 
+                            data-doc-ext="{{ ext }}">
+                            <td>
+                                <div class="doc-row-title">
+                                    <div class="doc-icon-wrapper 
+                                        {% if ext == 'pdf' %}format-pdf{% elif ext in ['doc', 'docx'] %}format-docx{% elif ext in ['html', 'htm'] %}format-html{% elif ext in ['xbrl', 'xml'] %}format-xbrl{% else %}format-txt{% endif %}">
+                                        <i class="fas 
+                                            {% if ext == 'pdf' %}fa-file-pdf{% elif ext in ['doc', 'docx'] %}fa-file-word{% elif ext in ['html', 'htm'] %}fa-file-code{% elif ext in ['xbrl', 'xml'] %}fa-file-invoice-dollar{% else %}fa-file-alt{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="doc-title-text" id="doc-title-{{ doc.id }}" style="font-weight: 600; color: var(--text-primary); word-break: break-word;">
+                                            {{ doc.original_name }}
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">
+                                            ID: #{{ doc.id }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="company-badge">{{ doc.company_name }}</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="format-badge format-{{ ext }}">{{ ext|upper }}</span>
+                            </td>
+                            <td style="color: var(--text-secondary); font-size: 0.85rem; white-space: nowrap;">
+                                {% if doc.file_size_bytes %}
+                                    {{ "%.1f"|format(doc.file_size_bytes / 1024) }} KB
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </td>
+                            <td style="font-weight: 500; text-align: center;">{{ doc.total_pages_or_sections }}</td>
+                            <td style="white-space: nowrap;">
+                                <span class="text-emerald-500 font-semibold" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                                    <i class="fas fa-check-circle" style="font-size: 0.75rem;"></i> {{ doc.chunk_count }} chunks
+                                </span>
+                            </td>
+                            <td style="color: var(--text-secondary); font-size: 0.82rem; white-space: nowrap;">
+                                {{ doc.created_at.split(' ')[0] if doc.created_at else 'Recent' }}
+                            </td>
+                            <td style="text-align: center; width: 175px; min-width: 175px; white-space: nowrap;">
+                                <div class="action-btn-group">
+                                    <!-- Download Button -->
+                                    <a href="/api/documents/{{ doc.id }}/download" 
+                                       download="{{ doc.original_name }}"
+                                       class="action-btn btn-download" 
+                                       title="Download Original File">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <!-- Rename Button -->
+                                    <button onclick="openRenameModal({{ doc.id }}, '{{ doc.original_name | replace("'", "\\'") }}')" 
+                                            class="action-btn btn-rename" 
+                                            title="Rename Document">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <!-- Delete Button (Prominent Red) -->
+                                    <button onclick="openDeleteModal({{ doc.id }}, '{{ doc.original_name | replace("'", "\\'") }}')" 
+                                            class="action-btn btn-delete" 
+                                            title="Delete Document">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                    <!-- Query in Chat -->
+                                    <a href="/chat" class="action-btn btn-chat" title="Query Document in Chat">
+                                        <i class="fas fa-comments"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                    {% else %}
+                        <tr id="no-docs-row">
+                            <td colspan="8" style="text-align: center; padding: 4rem 1rem;">
+                                <i class="fas fa-folder-open text-4xl mb-3" style="color: var(--text-muted); font-size: 2.5rem; display: block;"></i>
+                                <h3 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 0.4rem;">No documents uploaded yet</h3>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                                    Upload PDF, DOCX, TXT, HTML, or XBRL files to start building your knowledge base.
+                                </p>
+                                <a href="/" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-cloud-upload-alt"></i> Ingest First Document
+                                </a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            <!-- Empty state for search filter results -->
+            <div id="search-empty-state" style="display: none; text-align: center; padding: 3rem 1rem;">
+                <i class="fas fa-search" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 0.75rem;"></i>
+                <p style="font-weight: 600; font-size: 1rem;">No matching documents found</p>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">Try adjusting your search query or filters.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- RENAME MODAL DIALOG -->
+    <!-- ===================================================================== -->
+    <div id="rename-modal-overlay" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-pen text-amber-400"></i> Rename Document
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeRenameModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">
+                    Document Title / File Name
+                </label>
+                <input type="text" id="rename-input" 
+                       style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface-solid); color: var(--text-primary); font-size: 0.95rem; outline: none;">
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                    The file extension will be preserved automatically.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeRenameModal()">Cancel</button>
+                <button type="button" id="confirm-rename-btn" class="btn btn-primary btn-sm" onclick="executeRename()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- DELETE CONFIRMATION MODAL DIALOG -->
+    <!-- ===================================================================== -->
+    <div id="delete-modal-overlay" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title" style="color: #f87171;">
+                    <i class="fas fa-exclamation-triangle"></i> Delete Document
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.95rem; margin-bottom: 0.75rem;">
+                    Are you sure you want to delete <strong id="delete-doc-name-display" style="color: var(--text-primary);"></strong>?
+                </p>
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; font-size: 0.82rem; color: #fca5a5;">
+                    <i class="fas fa-info-circle mr-1"></i> This will permanently remove the physical file from server storage and purge all its indexed semantic chunks from FAISS and BM25 search indices.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" id="confirm-delete-btn" class="btn btn-danger btn-sm" onclick="executeDelete()">
+                    <i class="fas fa-trash-alt"></i> Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        const savedTheme = localStorage.getItem('docusphere-theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+            themeToggle.querySelector('i').classList.replace('fa-sun', 'fa-moon');
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('docusphere-theme', isLight ? 'light' : 'dark');
+            themeToggle.querySelector('i').classList.toggle('fa-sun', !isLight);
+            themeToggle.querySelector('i').classList.toggle('fa-moon', isLight);
+        });
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Live Filtering Logic
+        const searchInput = document.getElementById('doc-search-input');
+        const orgFilter = document.getElementById('org-filter-select');
+        const formatFilter = document.getElementById('format-filter-select');
+        const visibleCountEl = document.getElementById('visible-count');
+        const searchEmptyState = document.getElementById('search-empty-state');
+
+        function applyFilters() {
+            const q = searchInput.value.toLowerCase().trim();
+            const org = orgFilter.value.toLowerCase().trim();
+            const fmt = formatFilter.value.toLowerCase().trim();
+
+            const rows = document.querySelectorAll('#documents-tbody tr[data-doc-id]');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-doc-name') || '';
+                const docOrg = row.getAttribute('data-doc-org') || '';
+                const docExt = row.getAttribute('data-doc-ext') || '';
+
+                const matchesSearch = !q || name.includes(q) || docOrg.includes(q);
+                const matchesOrg = !org || docOrg === org;
+                const matchesFmt = !fmt || docExt === fmt || (fmt === 'xbrl' && (docExt === 'xml' || docExt === 'xbrl'));
+
+                if (matchesSearch && matchesOrg && matchesFmt) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (visibleCountEl) visibleCountEl.textContent = visibleCount;
+            if (searchEmptyState) {
+                searchEmptyState.style.display = (visibleCount === 0 && rows.length > 0) ? 'block' : 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', applyFilters);
+        orgFilter.addEventListener('change', applyFilters);
+        formatFilter.addEventListener('change', applyFilters);
+
+        // Rename Modal Logic
+        let currentRenameDocId = null;
+        const renameModal = document.getElementById('rename-modal-overlay');
+        const renameInput = document.getElementById('rename-input');
+        const confirmRenameBtn = document.getElementById('confirm-rename-btn');
+
+        function openRenameModal(id, currentName) {
+            currentRenameDocId = id;
+            renameInput.value = currentName;
+            renameModal.classList.add('active');
+            setTimeout(() => renameInput.focus(), 100);
+        }
+
+        function closeRenameModal() {
+            renameModal.classList.remove('active');
+            currentRenameDocId = null;
+        }
+
+        async function executeRename() {
+            if (!currentRenameDocId) return;
+            const newName = renameInput.value.trim();
+            if (!newName) {
+                showToast('Please enter a valid document name.', 'error');
+                return;
+            }
+
+            confirmRenameBtn.disabled = true;
+            confirmRenameBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const res = await fetch(`/api/documents/${currentRenameDocId}/rename`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({new_name: newName})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const row = document.getElementById(`doc-row-${currentRenameDocId}`);
+                    if (row) {
+                        row.setAttribute('data-doc-name', data.new_name.toLowerCase());
+                        const titleEl = document.getElementById(`doc-title-${currentRenameDocId}`);
+                        if (titleEl) titleEl.textContent = data.new_name;
+                        // update download link download attribute
+                        const dlLink = row.querySelector('.btn-download');
+                        if (dlLink) dlLink.setAttribute('download', data.new_name);
+                    }
+                    try {
+                        const saved = sessionStorage.getItem('recent_upload_batch');
+                        if (saved) {
+                            const parsed = JSON.parse(saved);
+                            if (parsed.docs) {
+                                parsed.docs.forEach(d => { if (d.id === currentRenameDocId) d.filename = data.new_name; });
+                                sessionStorage.setItem('recent_upload_batch', JSON.stringify(parsed));
+                            }
+                        }
+                    } catch(e) {}
+                    showToast(`Renamed to "${data.new_name}" successfully!`, 'success');
+                    closeRenameModal();
+                } else {
+                    showToast(data.message || 'Failed to rename document.', 'error');
+                }
+            } catch (err) {
+                showToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                confirmRenameBtn.disabled = false;
+                confirmRenameBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+            }
+        }
+
+        // Enter key in rename modal
+        renameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeRename();
+            } else if (e.key === 'Escape') {
+                closeRenameModal();
+            }
+        });
+
+        // Delete Modal Logic
+        let currentDeleteDocId = null;
+        const deleteModal = document.getElementById('delete-modal-overlay');
+        const deleteDocNameDisplay = document.getElementById('delete-doc-name-display');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+        function openDeleteModal(id, currentName) {
+            currentDeleteDocId = id;
+            deleteDocNameDisplay.textContent = currentName;
+            deleteModal.classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.remove('active');
+            currentDeleteDocId = null;
+        }
+
+        async function executeDelete() {
+            if (!currentDeleteDocId) return;
+
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+            try {
+                const res = await fetch(`/api/documents/${currentDeleteDocId}/delete`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (data.success || data.message === 'Document not found.' || data.message === 'Document is already removed.') {
+                    const row = document.getElementById(`doc-row-${currentDeleteDocId}`);
+                    if (row) {
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(20px)';
+                        row.style.transition = 'all 0.3s ease';
+                        setTimeout(() => {
+                            row.remove();
+                            applyFilters();
+                            const statDocs = document.getElementById('stat-total-docs');
+                            if (statDocs) {
+                                const count = parseInt(statDocs.textContent) || 1;
+                                statDocs.textContent = Math.max(0, count - 1);
+                            }
+                        }, 300);
+                    }
+                    try {
+                        const saved = sessionStorage.getItem('recent_upload_batch');
+                        if (saved) {
+                            const parsed = JSON.parse(saved);
+                            const remaining = (parsed.docs || []).filter(d => d.id !== currentDeleteDocId);
+                            if (remaining.length > 0) {
+                                sessionStorage.setItem('recent_upload_batch', JSON.stringify({
+                                    company: parsed.company,
+                                    docs: remaining
+                                }));
+                            } else {
+                                sessionStorage.removeItem('recent_upload_batch');
+                            }
+                        }
+                    } catch(e) {}
+                    showToast('Document deleted and purged from index.', 'success');
+                    closeDeleteModal();
+                } else {
+                    showToast(data.message || 'Failed to delete document.', 'error');
+                }
+            } catch (err) {
+                showToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+            }
+        }
+
+        // Close modals on overlay backdrop click
+        renameModal.addEventListener('click', (e) => {
+            if (e.target === renameModal) closeRenameModal();
+        });
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) closeDeleteModal();
+        });
+    </script>
+</body>
+</html>

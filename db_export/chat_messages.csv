@@ -1,0 +1,296 @@
+id,session_id,role,content,confidence,reasoning,verification_attempts,timestamp
+1,379b0750-c74c-4182-9810-e4ef4b084c2e,user,What are the main principles of DocuSphere AI?,,,1,2026-10-13 06:18:52
+2,379b0750-c74c-4182-9810-e4ef4b084c2e,assistant,"Information not available in the selected documents.
+
+The provided sources consist exclusively of the syllabus for the **TNPSC Group 4 Examination (2026)**, covering topics such as General Science, Indian Polity, Geography, and English language skills [Source #1], [Source #2], [Source #3], [Source #4], [Source #5]. There is no mention of ""DocuSphere AI"" or its principles in any of the retrieved contexts.",Low,"Plan: The question asks for the main principles of the platform itself. I have created two sub-queries to capture both explicit 'principles' and related concepts like 'foundational guidelines' or 'values' to ensure comprehensive retrieval from potential documentation describing the system's architecture or philosophy. | Audit: The drafted answer correctly identifies that the provided evidence blocks contain no information regarding 'DocuSphere AI' or its principles, as the sources exclusively cover the TNPSC Group 4 Examination syllabus. The response accurately reflects the absence of relevant data without hallucinating content.",1,2026-10-13 06:18:57
+3,379b0750-c74c-4182-9810-e4ef4b084c2e,user,could you give the list of topics under the science,,,1,2026-10-13 06:26:05
+4,379b0750-c74c-4182-9810-e4ef4b084c2e,assistant,"Based on the provided documents, the topics under **General Science** (Unit I of Part A: General Studies) are listed below:
+
+*   **Nature of Universe**
+*   **Measurement of physical quantities**
+*   **General scientific laws in motion**
+*   **Force, pressure, and energy**
+*   **Everyday application of basic principles** in:
+    *   Mechanics
+    *   Electricity
+    *   Magnetism
+    *   Light
+    *   Sound
+    *   Heat
+    *   Nuclear physics
+*   **Chemistry topics**:
+    *   Elements and compounds
+    *   Acids, bases, salts
+    *   Petroleum products
+    *   Fertilizers
+    *   Pesticides
+    *   Metallurgy
+    *   Food adulterants
+*   **Life Science concepts**:
+    *   Classification of living organisms
+    *   Evolution
+    *   Genetics
+    *   Physiology
+    *   Nutrition
+    *   Health and hygiene
+    *   Human diseases
+*   **Environmental science**
+*   **Latest inventions in science and technology**
+*   **Current affairs**
+
+[Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]",High,"Plan: The user is asking for a list of topics under 'science'. Based on the conversation context, the relevant document is the TNPSC Group 4 Examination syllabus. Therefore, the sub-queries are tailored to retrieve the specific 'General Science' or 'Science' section topics from that syllabus. | Audit: The drafted answer accurately lists all topics under 'Unit I: General Science' as explicitly stated in Source #1, with no hallucinations or omitted key items.",1,2026-10-13 06:26:08
+5,379b0750-c74c-4182-9810-e4ef4b084c2e,user,what about tamil?,,,1,2026-10-13 06:27:05
+6,379b0750-c74c-4182-9810-e4ef4b084c2e,assistant,"Based on the provided documents, **Tamil** is included in the TNPSC Group 4 Examination (2026) as a mandatory component of the single paper. Specifically:
+
+*   **Tamil Eligibility-cum-Scoring Test**: This section consists of **100 Questions**.
+*   **Context**: It is part of the ""Single Paper in SSLC Standard"" which also includes General Studies (75 Questions) and Aptitude and Mental Ability (25 Questions).
+
+[Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+
+Additionally, the syllabus includes topics related to **Tamil Nadu's history, culture, and heritage** under Unit VI of Part A (General Studies), which covers:
+*   History of Tamil Society and related archaeological discoveries.
+*   Tamil Literature from the Sangam age to contemporary times.
+*   **Thirukkural**: Its significance as secular literature, relevance to everyday life, impact on humanity, universal values, socio-politico-economic relevance, and philosophical content.
+*   Role of Tamil Nadu in the freedom struggle.
+*   Various social reformers, social reform movements, and social transformation of Tamil Nadu.
+
+[Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+[Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 3]",High,"Plan: The user is asking for the Tamil language topics within the TNPSC Group 4 syllabus, following a previous query about Science topics. The sub-queries target the specific language section of the syllabus to retrieve the relevant list of topics. | Audit: The draft accurately reflects the evidence provided in Source #1 regarding the Tamil Eligibility-cum-Scoring Test (100 questions) and the overall paper structure. It also correctly summarizes the content of Unit VI (History, Culture, Heritage of Tamil Nadu) found in Source #3, including specific details about Thirukkural and social reformers. Although the draft cites 'Page 3' for the Unit VI content, the provided evidence block for that content is labeled 'Page 1' (Source #3); however, since the factual content is explicitly present in the evidence and the citation points to the correct document, the core assertions are verified and not hallucinated.",1,2026-10-13 06:27:08
+7,379b0750-c74c-4182-9810-e4ef4b084c2e,user,why can't you give it in tamil?,,,1,2026-10-13 06:27:24
+8,379b0750-c74c-4182-9810-e4ef4b084c2e,assistant,"Information not available in the selected documents.
+
+The provided documents are the **TNPSC Group 4 Syllabus 2026** in **English**. While the syllabus includes a ""Tamil Eligibility-cum-Scoring Test"" [Source #5], the text of the syllabus itself is provided only in English. There is no Tamil language version of the syllabus text or a specific instruction regarding language availability in the retrieved context.",Low,"Plan: The user is asking about the language capability of the AI assistant (why it cannot respond in Tamil), which is a meta-question about the system's functionality rather than a query about the document content. Therefore, no document retrieval is required. | Audit: The draft correctly identifies that the provided evidence consists of the English version of the TNPSC Group 4 Syllabus and accurately notes the presence of a Tamil eligibility test component without hallucinating the availability of a Tamil language version of the document itself.",1,2026-10-13 06:27:32
+9,379b0750-c74c-4182-9810-e4ef4b084c2e,user,i want the tamil syllabus in tamil,,,1,2026-10-13 06:27:48
+10,379b0750-c74c-4182-9810-e4ef4b084c2e,assistant,"Information not available in the selected documents.
+
+The provided documents contain the TNPSC Group 4 Syllabus 2026 exclusively in **English** [Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]. While the syllabus includes a ""Tamil Eligibility-cum-Scoring Test"" consisting of 100 questions [Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1], the text of the syllabus itself is not provided in the Tamil language within the retrieved context.",Low,"Plan: The user is requesting the syllabus content in the Tamil language. The previous context indicates that only the English version was found. Therefore, the sub-queries are designed to specifically search for a Tamil-language document or section of the TNPSC Group 4 2026 syllabus, using both English keywords specifying the language and direct Tamil keywords for lexical matching. | Audit: The draft correctly identifies that the provided evidence contains the syllabus in English and does not provide the Tamil text, accurately reflecting the limitations of the source material.",1,2026-10-13 06:27:54
+11,379b0750-c74c-4182-9810-e4ef4b084c2e,user,give the syllabus of social,,,1,2026-10-13 06:29:00
+12,379b0750-c74c-4182-9810-e4ef4b084c2e,assistant,"Based on the retrieved documents, the specific phrase ""syllabus of social"" does not appear as a standalone unit title. However, the **TNPSC Group 4 Syllabus 2026** contains significant content related to **Social** topics, specifically within **Unit V** (Indian Economy and Development Administration) and **Unit VI** (History, Culture, Heritage, and Socio-Political Movements).
+
+Below is the syllabus content related to social aspects, history, and culture as explicitly stated in the provided English documents:
+
+### **Unit V: Indian Economy and Development Administration in Tamil Nadu**
+*(20 Questions)*
+*   **Social Problems:** Population, Education, Health, Employment, Poverty.
+*   **Social Justice and Social Harmony:** Described as the cornerstones of socio-economic development.
+*   **Education and Health Systems:** Specifically in Tamil Nadu.
+*   **Welfare Schemes:** Of the Government.
+*   **Current Socio-economic Issues:** And current affairs.
+*   *Other topics in this unit include:* Nature of Indian economy, Five-year plan models, Planning Commission and Niti Aayog, Sources of revenue, Reserve Bank of India, Finance Commission, Resource sharing, Goods and Services Tax, Economic trends, Employment generation, Land reforms and Agriculture, Application of Science and Technology in Agriculture, Industrial growth, Rural Welfare oriented programmes, and Geography of Tamil Nadu and its impact on economic growth.
+    *   [Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+
+### **Unit VI: History, Culture, Heritage, and Socio-Political Movements of Tamil Nadu**
+*(20 Questions)*
+*   **History of Tamil Society:** Related archaeological discoveries.
+*   **Tamil Literature:** From Sangam age till contemporary times.
+*   **Thirukkural:**
+    *   Significance as a Secular Literature.
+    *   Relevance to everyday life.
+    *   Impact of Thirukkural on Humanity.
+    *   Thirukkural and Universal Values – Relevance to Socio-politico-economic affairs.
+    *   Philosophical content in Thirukkural.
+*   **Role of Tamil Nadu in Freedom Struggle:**
+    *   Early agitations against British Rule.
+    *   Role of women in freedom struggle.
+*   **Social Reformers and Movements:**
+    *   Various Social reformers.
+    *   Social reform movements.
+    *   Social transformation of Tamil Nadu.
+    *   [Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+    *   [Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 2]
+
+### **Note on Language**
+The provided documents contain the syllabus text **exclusively in English**. While the examination includes a ""Tamil Eligibility-cum-Scoring Test"" consisting of 100 questions, the descriptive syllabus content for the units above is not provided in Tamil in the retrieved context.
+*   [Doc: 2a8d65da5f_TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]",Medium,"Plan: The user is asking for the syllabus of 'social' (likely referring to the Social Science or Tamil language component) in Tamil. Previous attempts failed to find a Tamil version. I will search specifically for a Tamil language version of the syllabus and details regarding the Tamil test component to ensure no relevant content is missed. | Audit: Audit fallback due to error: Error code: 429 - {'error': {'message': 'Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kg6thh0be1r9e230zpdxt68v` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Used 634, Requested 516. Please try again in 9s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",2,2026-10-13 06:29:26
+21,3210caf8-a4e8-46c3-94e4-88c294baa019,user,give the overview of group 4 tnpsc pdf,,,1,2026-10-13 07:49:20
+22,3210caf8-a4e8-46c3-94e4-88c294baa019,assistant,"Based on the provided documents, here is the overview of the **TNPSC Group 4 (Combined Civil Services Examination – IV)** syllabus for 2026.
+
+### **Exam Structure Overview**
+The examination consists of a **Single Paper** at the **SSLC Standard** level. The paper is divided into three main sections with the following question distribution:
+*   **General Studies:** 75 Questions
+*   **Aptitude and Mental Ability:** 25 Questions
+*   **Tamil Eligibility-cum-Scoring Test:** 100 Questions
+*   **Total Questions:** 200
+*   **Exam Code:** 496
+*   **Syllabus Date:** 12.12.2024
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1] [Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 5]
+
+---
+
+### **Part A: General Studies (SSLC Standard – 75 Questions)**
+
+#### **Unit I: General Science (5 Questions)**
+*   **Physics:** Nature of the universe, measurement of physical quantities, laws of motion, force, pressure, energy, and everyday applications of mechanics, electricity, magnetism, light, sound, heat, and nuclear physics.
+*   **Chemistry:** Elements, compounds, acids, bases, salts, petroleum products, fertilizers, pesticides, metallurgy, and food adulterants.
+*   **Biology:** Main concepts of life science, classification of living organisms, evolution, genetics, physiology, nutrition, health, hygiene, and human diseases.
+*   **Other:** Environmental science, latest inventions in science and technology, and current affairs.
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+
+#### **Unit II: History & Freedom Struggle (Context from Page 2)**
+*   Early agitations against British Rule.
+*   Role of women in the freedom struggle.
+*   Various social reformers, social reform movements, and social transformation of Tamil Nadu.
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 2]
+
+*(Note: The provided sources do not contain the full text for Units III–VI of General Studies, but confirm the total count is 75 questions.)*
+
+---
+
+### **Part B: Aptitude and Mental Ability (SSLC Standard – 25 Questions)**
+
+#### **Unit I: Aptitude (15 Questions)**
+*   Simplification
+*   Percentage
+*   Highest Common Factor (HCF)
+*   Lowest Common Multiple (LCM)
+*   Ratio and Proportion
+*   Simple Interest
+*   Compound Interest
+*   Area
+*   Volume
+*   Time and Work
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 2]
+
+#### **Unit II: Reasoning (10 Questions)**
+*   Logical reasoning
+*   Puzzles
+*   Dice
+*   Visual reasoning
+*   Alpha-numeric reasoning
+*   Number series
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 2]
+
+---
+
+### **Part C: Tamil Eligibility-cum-Scoring Test (100 Questions)**
+*(Based on the structure implied by the 100-question count and the detailed units provided in the sources)*
+
+#### **Unit I & II: Grammar & Vocabulary (Implied from Page 4 context)**
+*   Includes topics such as plurals (including zero plural), derivatives, abbreviations, British and American English, compound words, and figures of speech.
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 4]
+
+#### **Unit III: Writing Skills (10 Questions)**
+*   Letter writing (formal and informal)
+*   Types of Letters (Multiple Choice Questions)
+*   Jumbled sentences
+*   Finding the right order of sentences
+*   Making queries (Multiple Choice Questions)
+*   Inferences
+*   Blanks
+*   Substitutions
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 4]
+
+#### **Unit IV: Technical Terms (10 Questions)**
+*   Administrative terms
+*   Department-related terms
+*   General and official terms
+*   Official Correspondence (basics only)
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 4]
+
+*(Note: The provided sources detail Units III and IV of the Tamil section. The remaining 80 questions likely cover other units not fully detailed in the retrieved pages, but the total for this section is 100 questions.)*
+
+---
+
+### **Important Note**
+*   The syllabus for **Unit VII** (likely referring to a specific section within the General Studies or Tamil paper, though the exact unit number mapping for ""Unit VII"" is not explicitly defined in the snippet, the note applies to the syllabus basis) is based on **school textbooks up to SSLC Standard**.
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 4]",Medium,"Plan: The user is asking for an overview of the TNPC Group 4 exam, likely referring to the Tamil Nadu Public Service Commission Group 4 examination. To provide a comprehensive overview, the query is decomposed into three key aspects: general information (syllabus/eligibility), exam structure (pattern/marks), and preparation focus (important topics). This ensures retrieval of documents covering all facets of the exam overview. | Audit: Audit fallback due to error: Error code: 429 - {'error': {'message': ""Request too large for model `qwen/qwen3.8-27b` in organization `org_01kg6thh0be1r9e230zpdxt68v` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1192. The request's expected output tokens exceed the enforced limit; reduce max_tokens (or the request's expected output) and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing"", 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",1,2026-10-13 07:49:41
+27,6ca4b7aa-7f5d-4289-993c-3dd4d7ff5034,user,what is the exam pattern for tnpsc group 4?,,,1,2026-10-13 07:58:43
+28,6ca4b7aa-7f5d-4289-993c-3dd4d7ff5034,assistant,"Based on the provided documents, the exam pattern for the **TNPSC Group 4 (Combined Civil Services Examination – IV)** is structured as a **Single Paper** at the **SSLC Standard**.
+
+The total question distribution is as follows:
+
+| Section | Number of Questions | Standard |
+| :--- | :--- | :--- |
+| **General Studies** | **75** | SSLC |
+| **Aptitude and Mental Ability** | **25** | SSLC |
+| **Tamil Eligibility-cum-Scoring Test** | **100** | N/A |
+| **Total** | **200** | |
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+
+### Detailed Breakdown
+
+**1. Part A: General Studies (75 Questions)**
+*   **Unit I: General Science (5 Questions)**
+    *   Topics include nature of the universe, measurement of physical quantities, scientific laws in motion, force, pressure, energy, and applications of mechanics, electricity, magnetism, light, sound, heat, and nuclear physics.
+    *   Also covers elements, compounds, acids, bases, salts, petroleum products, fertilizers, pesticides, metallurgy, food adulterants, life science concepts, classification of organisms, evolution, genetics, physiology, nutrition, health, hygiene, human diseases, environmental science, and current affairs in science and technology.
+    *   [Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+
+**2. Part B: Aptitude and Mental Ability (25 Questions)**
+*   **Unit I: Aptitude (15 Questions)**
+    *   Topics include Simplification, Percentage, HCF, LCM, Ratio and Proportion, Simple Interest, Compound Interest, Area, Volume, and Time and Work.
+    *   [Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 2]
+*",High,"Plan: The user is asking for specific factual information regarding the exam pattern for a particular government exam (TNPCS Group 4). A single targeted query including the exam name and the specific aspect (pattern) is sufficient for retrieval. | Audit: The draft accurately reflects the exam structure (Single Paper, SSLC Standard) and question distribution (75 General Studies, 25 Aptitude, 100 Tamil) as explicitly stated in the provided evidence blocks. The detailed breakdown of units and topics matches the source text without hallucination.",1,2026-10-13 07:58:54
+31,4953e5ce-7f99-4daf-ae1a-f09f4556ad1e,user,how to make a coffee,,,1,2026-10-13 08:46:39
+32,4953e5ce-7f99-4daf-ae1a-f09f4556ad1e,assistant,Information not available in the selected documents.,Low,"Plan: The question is a simple, factual inquiry about a general process. It does not relate to enterprise data, company metrics, or multi-document intelligence. A single targeted sub-query is sufficient to retrieve any relevant procedural information if it exists in the corpus. | Audit: Correctly verified that information is absent from indexed documents.",1,2026-10-13 08:46:41
+33,4953e5ce-7f99-4daf-ae1a-f09f4556ad1e,user,what is the exam pattern for tnpsc group 4?,,,1,2026-10-13 08:46:50
+34,4953e5ce-7f99-4daf-ae1a-f09f4556ad1e,assistant,"Based on the provided documents, the exam pattern for the **TNPSC Group 4 (Combined Civil Services Examination – IV)** is a **Single Paper** at the **SSLC Standard**.
+
+The paper consists of **200 questions** in total, divided into three parts:
+
+*   **Part A: General Studies**
+    *   **75 Questions**
+    *   Standard: SSLC
+    *   [Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+
+*   **Part B: Aptitude and Mental Ability**
+    *   **25 Questions**
+    *   Standard: SSLC
+    *   Breakdown:
+        *   **Aptitude:** 15 Questions (Topics include Simplification, Percentage, HCF, LCM, Ratio and Proportion, Simple/Compound Interest, Area, Volume, Time and Work)
+        *   **Reasoning:** 10 Questions (Topics include Logical reasoning, Puzzles, Dice, Visual reasoning, Alpha numeric reasoning, Number series)
+    *   [Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 2]
+
+*   **Part C: Tamil Eligibility-cum-Scoring Test**
+    *   **100 Questions**
+    *   [Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+
+**Summary Table:**
+
+| Part | Subject | Number of Questions | Standard |
+| :--- | :--- | :--- | :--- |
+| A | General Studies | 75 | SSLC |
+| B | Aptitude and Mental Ability | 25 | SSLC |
+| C | Tamil Eligibility-cum-Scoring Test | 100 | - |
+| **Total** | | **200** | |
+
+[Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]",High,"Plan: The user is asking for specific factual information regarding the examination structure for TNPCS Group 4. The previous conversation about coffee is irrelevant. A single targeted query focusing on the exam pattern and syllabus is sufficient for retrieval. | Audit: The draft accurately reflects the exam structure (Single Paper, SSLC Standard) and question distribution (75 General Studies, 25 Aptitude/Mental Ability, 100 Tamil) as explicitly stated in the provided evidence blocks. The breakdown of Part B topics is also supported by Page 2 of the source document.",1,2026-10-13 08:46:52
+35,4953e5ce-7f99-4daf-ae1a-f09f4556ad1e,user,how to make a coffee,,,1,2026-10-13 08:48:06
+36,4953e5ce-7f99-4daf-ae1a-f09f4556ad1e,assistant,Information not available in the selected documents.,Low,"Plan: The user is asking a general factual question about making coffee. This is a simple query that does not require decomposition into multiple dimensions or company-specific metrics. A single targeted sub-query is sufficient to retrieve any relevant information, although the previous context suggests the documents may not contain this topic. | Audit: Correctly verified that information is absent from indexed documents.",1,2026-10-13 08:48:08
+37,4953e5ce-7f99-4daf-ae1a-f09f4556ad1e,user,give about the tnpsc group 4 exam pattern,,,1,2026-10-13 08:48:36
+38,4953e5ce-7f99-4daf-ae1a-f09f4556ad1e,assistant,"Based on the provided documents, the **TNPSC Group 4 (Combined Civil Services Examination – IV)** follows a **Single Paper** format at the **SSLC Standard**. The paper consists of **200 questions** in total, divided into three parts.
+
+**Exam Pattern Summary:**
+
+| Part | Subject | Number of Questions | Standard |
+| :--- | :--- | :--- | :--- |
+| **A** | General Studies | **75** | SSLC |
+| **B** | Aptitude and Mental Ability | **25** | SSLC |
+| **C** | Tamil Eligibility-cum-Scoring Test* | **100** | - |
+| **Total** | | **200** | |
+
+*\*Note: For Differently Abled Candidates only, Part C is replaced by **General English** (100 Questions) at SSLC Standard.* [Source #5]
+
+**Detailed Breakdown:**
+
+*   **Part A: General Studies (75 Questions)**
+    *   Includes topics such as General Science, History, Geography, Polity, Economics, and Current Affairs.
+    *   [Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 1]
+
+*   **Part B: Aptitude and Mental Ability (25 Questions)**
+    *   **Aptitude (15 Questions):** Simplification, Percentage, HCF, LCM, Ratio and Proportion, Simple/Compound Interest, Area, Volume, Time and Work.
+    *   **Reasoning (10 Questions):** Logical reasoning, Puzzles, Dice, Visual reasoning, Alpha numeric reasoning, Number series.
+    *   [Doc: TNPSC_Group_4_Syllabus_2026_English.pdf, Location: Page 2]
+
+*   **Part C: Tamil Eligibility-cum-Scoring Test (100 Questions)**
+    *   This is the standard Part C for general candidates.
+    *   [Doc: TNPSC_Group_4_Syllabus_",Medium,"Plan: The user is asking for details on the TNPSC Group 4 exam pattern. Although the previous turn provided a detailed answer, the current query is a direct request for this information. I will generate two sub-queries: one focusing on the structural pattern (parts, question count) and another on the specific syllabus components to ensure comprehensive retrieval from the relevant document. | Audit: Audit fallback due to error: Error code: 400 - {'error': {'message': ""Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details."", 'type': 'invalid_request_error', 'code': 'json_validate_failed', 'failed_generation': 'max completion tokens reached before generating a valid document'}}",1,2026-10-13 08:48:39

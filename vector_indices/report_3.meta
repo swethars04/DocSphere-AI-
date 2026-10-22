@@ -1,0 +1,66 @@
+[
+  {
+    "text": "[As of 2026-03-31] Fact: The value for 'NameOfTheCompany' (NameOfTheCompany) is 'Infosys'.",
+    "source": "XBRL Fact (Concept: NameOfTheCompany, Context: ICYMain)"
+  },
+  {
+    "text": "[As of 2026-03-31] Fact: The value for 'NSESymbol' (NSESymbol) is 'INFOSYS'.",
+    "source": "XBRL Fact (Concept: NSESymbol, Context: ICYMain)"
+  },
+  {
+    "text": "[As of 2026-03-31] Fact: The value for 'ScripCode' (ScripCode) is '500000'.",
+    "source": "XBRL Fact (Concept: ScripCode, Context: ICYMain)"
+  },
+  {
+    "text": "[As of 2026-03-31] Fact: The value for 'ISIN' (ISIN) is 'INE000000000'.",
+    "source": "XBRL Fact (Concept: ISIN, Context: ICYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'CorporateIdentityNumber' (CorporateIdentityNumber) is 'L00000MH0000PLC000000'.",
+    "source": "XBRL Fact (Concept: CorporateIdentityNumber, Context: DCYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'TotalElectricityConsumptionFromRenewableSources' (TotalElectricityConsumptionFromRenewableSources) is '85000000'.",
+    "source": "XBRL Fact (Concept: TotalElectricityConsumptionFromRenewableSources, Context: DCYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'TotalElectricityConsumptionFromNonRenewableSources' (TotalElectricityConsumptionFromNonRenewableSources) is '150000000'.",
+    "source": "XBRL Fact (Concept: TotalElectricityConsumptionFromNonRenewableSources, Context: DCYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'TotalEnergyConsumedFromRenewableSources' (TotalEnergyConsumedFromRenewableSources) is '85000000'.",
+    "source": "XBRL Fact (Concept: TotalEnergyConsumedFromRenewableSources, Context: DCYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'TotalEnergyConsumedFromNonRenewableSources' (TotalEnergyConsumedFromNonRenewableSources) is '150000000'.",
+    "source": "XBRL Fact (Concept: TotalEnergyConsumedFromNonRenewableSources, Context: DCYMain)"
+  },
+  {
+    "text": "[As of 2026-03-31] Fact: The value for 'NumberOfFemaleBoardOfDirectors' (NumberOfFemaleBoardOfDirectors) is '3'.",
+    "source": "XBRL Fact (Concept: NumberOfFemaleBoardOfDirectors, Context: ICYMain)"
+  },
+  {
+    "text": "[As of 2026-03-31] Fact: The value for 'PercentageOfFemaleBoardOfDirectors' (PercentageOfFemaleBoardOfDirectors) is '0.30'.",
+    "source": "XBRL Fact (Concept: PercentageOfFemaleBoardOfDirectors, Context: ICYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'TurnoverRate' (TurnoverRate) is '0.125'.",
+    "source": "XBRL Fact (Concept: TurnoverRate, Context: DCYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'WhetherCSRIsApplicableAsPerSection135OfCompaniesAct2013' (WhetherCSRIsApplicableAsPerSection135OfCompaniesAct2013) is 'true'.",
+    "source": "XBRL Fact (Concept: WhetherCSRIsApplicableAsPerSection135OfCompaniesAct2013, Context: DCYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'TypeOfAssuranceForDetailsOfCSR' (TypeOfAssuranceForDetailsOfCSR) is 'Reasonable'.",
+    "source": "XBRL Fact (Concept: TypeOfAssuranceForDetailsOfCSR, Context: DCYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'SpecificCommitmentsGoalsAndTargetsSetByTheEntityWithDefinedTimelinesExplanatoryTextBlock' (SpecificCommitmentsGoalsAndTargetsSetByTheEntityWithDefinedTimelinesExplanatoryTextBlock) is 'SBTi target: to reduce absolute Scope 1 and 2 emissions 45% by FY 2030 from a FY 2020 baseline and achieve Net Zero carbon operations by FY 2050.'.",
+    "source": "XBRL Fact (Concept: SpecificCommitmentsGoalsAndTargetsSetByTheEntityWithDefinedTimelinesExplanatoryTextBlock, Context: DCYMain)"
+  },
+  {
+    "text": "[Unknown Period] Fact: The value for 'PerformanceOfTheEntityAgainstTheSpecificCommitmentsGoalsAndTargetsAlongWithReasonsInCaseTheSameAreNotMetExplanatoryTextBlock' (PerformanceOfTheEntityAgainstTheSpecificCommitmentsGoalsAndTargetsAlongWithReasonsInCaseTheSameAreNotMetExplanatoryTextBlock) is '35% reduction in Scope 1 and 2 emissions achieved as of FY 2026, with renewable energy mix reaching 40% across all primary manufacturing facilities.'.",
+    "source": "XBRL Fact (Concept: PerformanceOfTheEntityAgainstTheSpecificCommitmentsGoalsAndTargetsAlongWithReasonsInCaseTheSameAreNotMetExplanatoryTextBlock, Context: DCYMain)"
+  }
+]

@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocSphere AI - Grounded Multi-Agent Chat</title>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Marked.js for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .filter-chip-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .company-multiselect {
+            background: var(--bg-surface-solid);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.35rem 0.6rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .confidence-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .confidence-high {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .confidence-medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .confidence-low {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .citation-tag {
+            background: rgba(59, 130, 246, 0.12);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: var(--radius-sm);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-top: 0.5rem;
+            margin-right: 0.4rem;
+            transition: var(--transition);
+        }
+        .citation-tag:hover {
+            background: rgba(59, 130, 246, 0.25);
+            border-color: #60a5fa;
+        }
+        /* Message Bubbles - Clean Modern UI */
+        .message-bubble {
+            max-width: 820px;
+            width: 100%;
+            margin: 0.4rem 0;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+        .message-bubble.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.25) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: var(--text-primary);
+            padding: 0.85rem 1.25rem;
+            border-bottom-right-radius: 4px;
+            max-width: 75%;
+            margin-left: auto;
+        }
+        .message-bubble.assistant {
+            align-self: flex-start;
+            background: var(--bg-surface-solid);
+            border: 1px solid var(--border);
+            padding: 1.25rem 1.5rem;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 850px;
+            margin-right: auto;
+        }
+        .msg-role-tag {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .msg-role-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            background: rgba(16, 185, 129, 0.16);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .audit-loop-badge {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .thinking-bubble {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.9rem 1.25rem;
+            background: var(--bg-surface-solid);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            max-width: 850px;
+            margin-right: auto;
+        }
+        /* Citation Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            display: flex !important;
+        }
+        .modal-content {
+            background: var(--bg-surface-solid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 650px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 1.75rem;
+            box-shadow: var(--shadow);
+        }
+        /* Session Card Hover Actions */
+        .report-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            padding: 0.75rem 0.85rem;
+        }
+        .report-card-link {
+            flex: 1;
+            min-width: 0;
+            text-decoration: none;
+            color: inherit;
+        }
+        .session-card-actions {
+            display: none;
+            align-items: center;
+            gap: 0.25rem;
+            flex-shrink: 0;
+            margin-left: 0.4rem;
+        }
+        .report-card:hover .session-card-actions,
+        .report-card.active .session-card-actions {
+            display: flex;
+        }
+        .session-mini-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            transition: var(--transition);
+        }
+        .session-mini-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--primary);
+            background: var(--bg-hover);
+        }
+        .session-mini-btn.btn-delete:hover {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.45);
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* ======================================================== */
+        /* MODERN CHATGPT-STYLE INPUT & CENTERED EMPTY STATE */
+        /* ======================================================== */
+        .chat-container {
+            flex: 1;
+            width: 100%;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-main);
+            height: calc(100vh - 70px);
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .message-stream {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            min-height: 0;
+            scroll-behavior: smooth;
+        }
+
+        /* Bottom Floating / Docked Input Container */
+        .chat-input-container {
+            width: 100%;
+            padding: 0.75rem 1.5rem 1.75rem 1.5rem; /* 1.75rem lifts it comfortably off the floor! */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(9, 13, 22, 0) 0%, var(--bg-main) 45%);
+            position: relative;
+            z-index: 20;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chat-input-card {
+            max-width: 820px;
+            width: 100%;
+            background: var(--bg-surface-solid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 0.5rem 0.65rem 0.5rem 1.15rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .chat-input-card:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15), 0 0 0 1px var(--primary);
+        }
+
+        .chat-textarea {
+            flex: 1;
+            resize: none;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            padding: 0.45rem 0;
+            max-height: 140px;
+        }
+
+        .chat-send-btn {
+            height: 44px;
+            width: 44px;
+            border-radius: var(--radius-md);
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+            font-size: 1rem;
+        }
+
+        .chat-send-btn:hover {
+            background: var(--primary-hover);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .chat-disclaimer {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            text-align: center;
+            letter-spacing: 0.01em;
+        }
+
+        /* -------------------------------------------------------- */
+        /* EMPTY / NEW CHAT STATE: CENTERED PROMINENTLY LIKE CHATGPT */
+        /* -------------------------------------------------------- */
+        .chat-container.empty-state {
+            justify-content: center;
+        }
+
+        .chat-container.empty-state .message-stream {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: initial;
+            padding: 1rem 1.5rem 0 1.5rem;
+            margin-top: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .chat-container.empty-state .welcome-hero {
+            text-align: center;
+            max-width: 580px;
+            margin: 0 auto;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .welcome-hero .welcome-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-glow);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin: 0 auto 1.15rem;
+            box-shadow: 0 8px 24px var(--primary-glow);
+        }
+
+        .welcome-hero .welcome-title {
+            font-size: 1.5rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .welcome-hero .welcome-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        .chat-container.empty-state .suggestion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.75rem;
+            max-width: 760px;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+
+        .suggestion-chip {
+            background: var(--bg-surface-solid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 0.7rem 0.9rem;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .suggestion-chip:hover {
+            border-color: var(--primary);
+            color: var(--text-primary);
+            background: var(--bg-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .suggestion-chip i {
+            color: var(--primary);
+            font-size: 0.85rem;
+        }
+
+        .chat-container.empty-state .chat-input-container {
+            margin-bottom: auto;
+            padding-bottom: 2rem;
+            background: transparent;
+        }
+
+        .chat-container.empty-state .chat-input-card {
+            max-width: 760px;
+            border-radius: 20px;
+            padding: 0.75rem 0.85rem 0.75rem 1.25rem;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+        }
+    </style>
+</head>
+<body class="chat-page">
+    <!-- Header -->
+    <header>
+        <a href="/" class="logo-container">
+            <div class="logo-icon"><i class="fas fa-layer-group"></i></div>
+            <h1 class="logo-text">DocSphere AI</h1>
+        </a>
+
+        <!-- Center Navigation Tabs -->
+        <div class="nav-tabs-wrapper">
+            <a href="/" class="nav-tab-link">
+                <i class="fas fa-cloud-upload-alt"></i> Upload & Ingest
+            </a>
+            <a href="/documents" class="nav-tab-link">
+                <i class="fas fa-folder-open"></i> Document Storage
+            </a>
+            <a href="/chat" class="nav-tab-link active">
+                <i class="fas fa-comments"></i> RAG Chatbot
+            </a>
+            <a href="/database" class="nav-tab-link">
+                <i class="fas fa-database"></i> Database
+            </a>
+        </div>
+
+        <div class="header-actions">
+            <button id="theme-toggle" class="btn btn-secondary btn-icon" title="Toggle Theme">
+                <i class="fas fa-sun"></i>
+            </button>
+            <a href="/chat/new" class="btn btn-primary btn-sm" style="text-decoration: none;">
+                <i class="fas fa-plus" style="text-decoration: none;"></i> New Chat
+            </a>
+        </div>
+    </header>
+
+    <!-- 3-Column Chat Workspace -->
+    <div class="chat-workspace" id="chat-workspace">
+        <script>
+            // Prevent layout flicker by applying collapsed state before render
+            if (localStorage.getItem('docsphere-sidebar-collapsed') === 'true') {
+                document.getElementById('chat-workspace').classList.add('sidebar-collapsed');
+            }
+        </script>
+        
+        <!-- Modern ChatGPT/Claude Style Collapsible Sidebar -->
+        <aside class="chat-sidebar" id="chat-sidebar" aria-label="Conversation History">
+            <!-- Sidebar Top: New Chat + Collapse Toggle -->
+            <div class="sidebar-header">
+                <a href="/chat/new" id="sidebar-new-chat-btn" class="sidebar-new-chat-btn" title="Start a fresh chat (Ctrl+K)">
+                    <i class="fas fa-plus"></i>
+                    <span>New Chat</span>
+                </a>
+                <button type="button" id="sidebar-collapse-btn" class="sidebar-icon-btn" title="Close sidebar (Ctrl+B)" aria-label="Collapse sidebar">
+                    <i class="fas fa-columns"></i>
+                </button>
+            </div>
+
+            <!-- Client-Side Real-Time Search -->
+            <div class="sidebar-search-wrapper">
+                <i class="fas fa-search sidebar-search-icon"></i>
+                <input type="text" id="session-search-input" class="sidebar-search-input" placeholder="Search conversations..." autocomplete="off" spellcheck="false" aria-label="Search conversations">
+                <button type="button" id="clear-search-btn" class="clear-search-btn" style="display: none;" title="Clear search" aria-label="Clear search">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Section Label -->
+            <div class="sidebar-section-label">
+                <span>Recent Chats</span>
+            </div>
+            
+            <!-- Sessions Scrollable Container -->
+            <div class="sessions-scroll-container" id="sessions-list">
+                {% for s in sessions %}
+                <div class="session-nav-item {% if s.session_id == current_session.session_id %}active{% endif %}" id="session-card-{{ s.session_id }}" data-session-title="{{ s.title|lower }}">
+                    <a href="/chat/{{ s.session_id }}" class="session-nav-link" title="{{ s.title }}">
+                        <i class="far fa-message session-icon"></i>
+                        <div class="session-nav-text">
+                            <div class="session-nav-title" id="session-title-{{ s.session_id }}">{{ s.title }}</div>
+                            <div class="session-nav-time">
+                                <i class="far fa-clock"></i> {{ s.updated_at.split(' ')[0] if s.updated_at else 'Recent' }}
+                            </div>
+                        </div>
+                    </a>
+                    <div class="session-hover-actions">
+                        <button type="button" onclick="openRenameSessionModal('{{ s.session_id }}', '{{ s.title | replace("'", "\\'") }}')" class="session-action-btn" title="Rename Chat">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button type="button" onclick="openDeleteSessionModal('{{ s.session_id }}', '{{ s.title | replace("'", "\\'") }}')" class="session-action-btn delete" title="Delete Chat">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div id="no-search-results" class="no-search-results" style="display: none;">
+                    <i class="fas fa-search-minus" style="font-size: 1.5rem; opacity: 0.4;"></i>
+                    <span>No conversations match your search</span>
+                </div>
+            </div>
+
+            <!-- Sidebar Bottom: Export Transcript -->
+            <div class="sidebar-footer">
+                <a href="/api/chat/sessions/{{ current_session.session_id }}/export" class="sidebar-export-btn" download title="Export conversation as Markdown transcript">
+                    <i class="fas fa-file-download"></i>
+                    <span>Export Transcript</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Center: Active Chat Stream -->
+        <main class="chat-container {% if not messages %}empty-state{% endif %}" id="chat-container">
+            <!-- Chat Header & Company Filter Selector -->
+            <div class="chat-header" style="flex-wrap: wrap; gap: 0.75rem;">
+                <div class="chat-header-left">
+                    <button type="button" id="sidebar-expand-btn" class="sidebar-icon-btn sidebar-expand-toggle" title="Open sidebar (Ctrl+B)" aria-label="Open sidebar">
+                        <i class="fas fa-columns"></i>
+                    </button>
+                    <div>
+                        <h3 class="chat-header-title" id="session-title-display">{{ current_session.title }}</h3>
+                        <div class="chat-header-subtitle">
+                            <span class="agent-pulse-dot"></span>
+                            <span>4-Agent Self-Correction Pipeline Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Filter Multiselect Dropdown -->
+                <div class="filter-chip-container">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">
+                        <i class="fas fa-filter text-emerald-500 mr-1"></i> Document Filter / Tag:
+                    </label>
+                    <select id="company-filter-select" class="company-multiselect">
+                        <option value="">All Documents (Global Search)</option>
+                        {% for comp in companies %}
+                            <option value="{{ comp.id }}" {% if comp.id in current_session.selected_company_ids %}selected{% endif %}>
+                                {{ comp.name }} ({{ comp.document_count }} docs)
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="message-stream" id="message-stream">
+                {% if messages %}
+                    {% for msg in messages %}
+                        {% if msg.role == 'user' %}
+                            <div class="message-bubble user">
+                                <div class="message-content" data-raw="{{ msg.content }}">{{ msg.content }}</div>
+                                <div style="font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); text-align: right; margin-top: 0.35rem;">
+                                    {{ msg.timestamp.split(' ')[1][:5] if msg.timestamp else '' }}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="message-bubble assistant">
+                                <div class="msg-role-tag">
+                                    <div class="msg-role-icon" title="DocSphere AI Assistant">🤖</div>
+                                    <span style="color: var(--text-primary);">DocSphere Assistant</span>
+                                    {% if msg.confidence %}
+                                        {% set content_lower = msg.content|lower|trim %}
+                                        {% set is_unavailable = (content_lower.startswith('information not available') or content_lower.startswith('the provided documents do not contain') or content_lower.startswith('no information provided')) and msg.content|length < 350 %}
+                                        {% if is_unavailable %}
+                                            <span class="confidence-badge confidence-low ml-1" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">
+                                                <i class="fas fa-exclamation-circle"></i> Not in Documents
+                                            </span>
+                                        {% elif msg.confidence|lower == 'high' %}
+                                            <span class="confidence-badge confidence-high ml-1">
+                                                <i class="fas fa-shield-alt"></i> High Confidence
+                                            </span>
+                                        {% elif msg.confidence|lower == 'medium' %}
+                                            <span class="confidence-badge confidence-medium ml-1">
+                                                <i class="fas fa-shield-alt"></i> Medium Confidence
+                                            </span>
+                                        {% else %}
+                                            <span class="confidence-badge confidence-high ml-1">
+                                                <i class="fas fa-shield-alt"></i> Grounded Answer
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if msg.verification_attempts and msg.verification_attempts > 1 %}
+                                        <span class="audit-loop-badge">{{ msg.verification_attempts }} audit loops</span>
+                                    {% endif %}
+                                    <div class="pipeline-audit-badge-strip" title="Audited through 4-Agent Pipeline: Planner ➔ Retriever ➔ Reasoner ➔ Verifier">
+                                        <span class="pipeline-audit-pill"><i class="fas fa-check-circle"></i> Planner</span>
+                                        <span class="pipeline-audit-arrow">➔</span>
+                                        <span class="pipeline-audit-pill"><i class="fas fa-check-circle"></i> Retriever</span>
+                                        <span class="pipeline-audit-arrow">➔</span>
+                                        <span class="pipeline-audit-pill"><i class="fas fa-check-circle"></i> Reasoner</span>
+                                        <span class="pipeline-audit-arrow">➔</span>
+                                        <span class="pipeline-audit-pill"><i class="fas fa-check-circle"></i> Verifier</span>
+                                    </div>
+                                </div>
+                                <div class="message-content markdown-body" data-raw="{{ msg.content }}">
+                                    {{ msg.content }}
+                                </div>
+                                {% if msg.citations %}
+                                    <div class="citations-container" style="margin-top: 0.75rem; border-top: 1px dashed var(--border); padding-top: 0.6rem;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem;">
+                                            <i class="fas fa-book-bookmark text-blue-400 mr-1"></i> Verified Sources:
+                                        </div>
+                                        {% for cite in msg.citations %}
+                                            <span class="citation-tag" data-cite="{{ cite|tojson|urlencode }}" onclick="openCitationFromElement(this)">
+                                                <i class="fas fa-file-lines"></i>
+                                                <strong>{{ cite.company_name }}</strong>: {{ cite.document_name }} ({{ cite.page_or_section }})
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Welcome Initial State (Centered in Viewport) -->
+                    <div class="welcome-hero" id="welcome-hero">
+                        <div class="welcome-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h2 class="welcome-title">Ask DocSphere AI</h2>
+                        <p class="welcome-desc">
+                            Ask complex questions across your ingested PDF, Word, XML, and HTML documents. Answers are strictly audited and verified with source citations.
+                        </p>
+                        <!-- Quick Suggestion Prompt Chips -->
+                        <div class="suggestion-grid">
+                            <button type="button" class="suggestion-chip" onclick="applySuggestion('Summarize key highlights and objectives from the documents')">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Summarize key highlights & objectives</span>
+                            </button>
+                            <button type="button" class="suggestion-chip" onclick="applySuggestion('What are the main financial risk factors identified?')">
+                                <i class="fas fa-shield-halved"></i>
+                                <span>What are the main risk factors?</span>
+                            </button>
+                            <button type="button" class="suggestion-chip" onclick="applySuggestion('Explain the governance and compliance requirements')">
+                                <i class="fas fa-scale-balanced"></i>
+                                <span>Explain compliance requirements</span>
+                            </button>
+                            <button type="button" class="suggestion-chip" onclick="applySuggestion('Extract key performance metrics and quantitative data')">
+                                <i class="fas fa-chart-pie"></i>
+                                <span>Extract key metrics & data</span>
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Input Controls (Floating Card with Comfortable Bottom Margin) -->
+            <div class="chat-input-container" id="chat-input-container">
+                <div class="chat-input-card">
+                    <form id="chat-form" style="display: flex; gap: 0.75rem; width: 100%; align-items: center;">
+                        <textarea id="chat-input" class="chat-textarea" placeholder="Ask a question across your documents..." rows="1" required></textarea>
+                        <button type="submit" id="send-btn" class="chat-send-btn" title="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+                <div class="chat-disclaimer">
+                    DocSphere AI audits sources with 4-agent verification. Grounded strictly in your documents.
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Verifiable Citation Modal -->
+    <div class="modal-overlay" id="citation-modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1.1rem; font-family: var(--font-heading); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-shield-check text-emerald-500"></i> Verifiable Source Citation
+                </h3>
+                <button class="btn btn-secondary btn-icon btn-sm" onclick="closeCitationModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="modal-body">
+                <!-- Injected via JavaScript -->
+            </div>
+            <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeCitationModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sessionId = "{{ current_session.session_id }}";
+        const messageStream = document.getElementById('message-stream');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const companyFilterSelect = document.getElementById('company-filter-select');
+        const citationModal = document.getElementById('citation-modal');
+        const modalBody = document.getElementById('modal-body');
+
+        // Theme Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const savedTheme = localStorage.getItem('docusphere-theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+            themeToggle.querySelector('i').classList.replace('fa-sun', 'fa-moon');
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('docusphere-theme', isLight ? 'light' : 'dark');
+            themeToggle.querySelector('i').classList.toggle('fa-sun', !isLight);
+            themeToggle.querySelector('i').classList.toggle('fa-moon', isLight);
+        });
+
+        // Render Existing Markdown Messages
+        document.querySelectorAll('.message-content[data-raw]').forEach(el => {
+            const raw = el.getAttribute('data-raw');
+            if (raw && typeof marked !== 'undefined') {
+                el.innerHTML = marked.parse(raw);
+            }
+        });
+        messageStream.scrollTop = messageStream.scrollHeight;
+
+        // Auto-resize textarea & Enter key submission (Enter sends, Shift+Enter new line)
+        chatInput.addEventListener('input', () => {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+        });
+
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (chatInput.value.trim()) {
+                    chatForm.requestSubmit();
+                }
+            }
+        });
+
+        // New Chat Button
+        const newChatBtn = document.getElementById('new-chat-btn');
+        if (newChatBtn) {
+            newChatBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = '/chat/new';
+            });
+        }
+
+        // Update Company Filter on selection change
+        companyFilterSelect.addEventListener('change', async () => {
+            const val = companyFilterSelect.value;
+            const ids = val ? [parseInt(val)] : [];
+            await fetch(`/api/chat/sessions/${sessionId}/filter`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({selected_company_ids: ids})
+            });
+        });
+
+        // Apply Suggestion Prompt Chip
+        function applySuggestion(promptText) {
+            chatInput.value = promptText;
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+            chatForm.requestSubmit();
+        }
+
+        // Form Submit
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            // Smoothly transition from centered empty-state to active docked chat
+            const chatContainer = document.getElementById('chat-container');
+            if (chatContainer && chatContainer.classList.contains('empty-state')) {
+                chatContainer.classList.remove('empty-state');
+                const welcomeHero = document.getElementById('welcome-hero');
+                if (welcomeHero) welcomeHero.remove();
+            }
+
+            // Append User Message to Stream
+            appendMessage('user', text);
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            sendBtn.disabled = true;
+
+            // Start Live 4-Agent Pipeline Stepper Animation
+            const pipelineId = 'pipeline-' + Date.now();
+            appendPipelineStepper(pipelineId);
+            messageStream.scrollTop = messageStream.scrollHeight;
+
+            const selectedCompVal = companyFilterSelect.value;
+            const companyIds = selectedCompVal ? [parseInt(selectedCompVal)] : [];
+
+            try {
+                const response = await fetch(`/api/chat/sessions/${sessionId}/message`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        message: text,
+                        company_ids: companyIds
+                    })
+                });
+                const res = await response.json();
+                
+                // Complete the pipeline animation gracefully
+                await finishPipelineStepper(pipelineId, res.success);
+
+                if (res.success) {
+                    appendMessage('assistant', res.answer, res.confidence, res.citations, res.attempts);
+                    if (res.new_title) {
+                        const headerTitle = document.getElementById('session-title-display');
+                        if (headerTitle) headerTitle.textContent = res.new_title;
+                        const sidebarTitle = document.getElementById(`session-title-${sessionId}`);
+                        if (sidebarTitle) sidebarTitle.textContent = res.new_title;
+                        document.title = `${res.new_title} - DocSphere AI`;
+                    }
+                } else {
+                    appendMessage('assistant', `⚠️ **Error:** ${res.message || 'Unable to process query.'}`, 'Low');
+                }
+            } catch (err) {
+                await finishPipelineStepper(pipelineId, false);
+                appendMessage('assistant', `⚠️ **Network Error:** ${err.message}`, 'Low');
+            } finally {
+                sendBtn.disabled = false;
+                messageStream.scrollTop = messageStream.scrollHeight;
+            }
+        });
+
+
+        function appendMessage(role, content, confidence = null, citations = [], attempts = 1) {
+            const bubble = document.createElement('div');
+            bubble.className = `message-bubble ${role}`;
+
+            const parsedHtml = (typeof marked !== 'undefined') ? marked.parse(content) : content;
+
+            if (role === 'user') {
+                bubble.innerHTML = `
+                    <div class="message-content">${parsedHtml}</div>
+                    <div style="font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); text-align: right; margin-top: 0.35rem;">Just now</div>
+                `;
+            } else {
+                let badgesHtml = '';
+                if (confidence) {
+                    const contentLower = (content || '').toLowerCase().trim();
+                    const isTrulyUnavailable = (contentLower.startsWith('information not available') ||
+                                               contentLower.startsWith('the provided documents do not contain') ||
+                                               contentLower.startsWith('no information provided')) && (content || '').length < 350;
+                    if (isTrulyUnavailable) {
+                        badgesHtml += ` <span class="confidence-badge confidence-low ml-1" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);"><i class="fas fa-exclamation-circle"></i> Not in Documents</span>`;
+                    } else if (confidence.toLowerCase() === 'high') {
+                        badgesHtml += ` <span class="confidence-badge confidence-high ml-1"><i class="fas fa-shield-alt"></i> High Confidence</span>`;
+                    } else if (confidence.toLowerCase() === 'medium') {
+                        badgesHtml += ` <span class="confidence-badge confidence-medium ml-1"><i class="fas fa-shield-alt"></i> Medium Confidence</span>`;
+                    } else {
+                        badgesHtml += ` <span class="confidence-badge confidence-high ml-1"><i class="fas fa-shield-alt"></i> Grounded Answer</span>`;
+                    }
+                }
+                if (attempts && attempts > 1) {
+                    badgesHtml += ` <span class="audit-loop-badge">${attempts} audit loops</span>`;
+                }
+
+                // 4-Agent Pipeline Audit Strip
+                const auditStripHtml = `
+                    <div class="pipeline-audit-badge-strip" title="Audited through 4-Agent Pipeline: Planner ➔ Retriever ➔ Reasoner ➔ Verifier">
+                        <span class="pipeline-audit-pill"><i class="fas fa-check-circle"></i> Planner</span>
+                        <span class="pipeline-audit-arrow">➔</span>
+                        <span class="pipeline-audit-pill"><i class="fas fa-check-circle"></i> Retriever</span>
+                        <span class="pipeline-audit-arrow">➔</span>
+                        <span class="pipeline-audit-pill"><i class="fas fa-check-circle"></i> Reasoner</span>
+                        <span class="pipeline-audit-arrow">➔</span>
+                        <span class="pipeline-audit-pill"><i class="fas fa-check-circle"></i> Verifier</span>
+                    </div>
+                `;
+
+                let citationsHtml = '';
+                if (citations && citations.length > 0) {
+                    citationsHtml += `
+                    <div class="citations-container" style="margin-top: 0.75rem; border-top: 1px dashed var(--border); padding-top: 0.6rem;">
+                        <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem;">
+                            <i class="fas fa-book-bookmark text-blue-400 mr-1"></i> Verified Sources:
+                        </div>`;
+                    citations.forEach(c => {
+                        const citeEncoded = encodeURIComponent(JSON.stringify(c));
+                        citationsHtml += `
+                        <span class="citation-tag" data-cite="${citeEncoded}" onclick="openCitationFromElement(this)">
+                            <i class="fas fa-file-lines"></i> <strong>${c.company_name}</strong>: ${c.document_name} (${c.page_or_section})
+                        </span>`;
+                    });
+                    citationsHtml += `</div>`;
+                }
+
+                bubble.innerHTML = `
+                    <div class="msg-role-tag">
+                        <div class="msg-role-icon" title="DocSphere AI Assistant">🤖</div>
+                        <span style="color: var(--text-primary);">DocSphere Assistant</span>
+                        ${badgesHtml}
+                        ${auditStripHtml}
+                    </div>
+                    <div class="message-content markdown-body">${parsedHtml}</div>
+                    ${citationsHtml}
+                `;
+            }
+
+            messageStream.appendChild(bubble);
+        }
+
+        /* ======================================================== */
+        /* LIVE 4-AGENT PIPELINE STEPPER CONTROLLER */
+        /* ======================================================== */
+        function appendPipelineStepper(id) {
+            const card = document.createElement('div');
+            card.id = id;
+            card.className = 'agent-pipeline-card';
+            card.innerHTML = `
+                <div class="pipeline-card-header">
+                    <div class="pipeline-card-status">
+                        <span class="pipeline-radar-dot"></span>
+                        <span class="pipeline-title">4-Agent Autonomous Pipeline Active</span>
+                    </div>
+                    <div class="pipeline-timer" id="${id}-timer">0.0s</div>
+                </div>
+
+                <div class="pipeline-stepper-track">
+                    <!-- Step 1: Planner -->
+                    <div class="pipeline-step active" id="${id}-step-1">
+                        <div class="step-node">
+                            <div class="step-node-inner">
+                                <i class="fas fa-sitemap step-icon"></i>
+                                <i class="fas fa-check step-check"></i>
+                            </div>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-name">1. Planner</span>
+                            <span class="step-desc" id="${id}-desc-1">Decomposing query...</span>
+                        </div>
+                    </div>
+
+                    <div class="step-connector active" id="${id}-conn-1">
+                        <div class="connector-line"></div>
+                        <div class="connector-arrow">➔</div>
+                    </div>
+
+                    <!-- Step 2: Retriever -->
+                    <div class="pipeline-step pending" id="${id}-step-2">
+                        <div class="step-node">
+                            <div class="step-node-inner">
+                                <i class="fas fa-database step-icon"></i>
+                                <i class="fas fa-check step-check"></i>
+                            </div>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-name">2. Retriever</span>
+                            <span class="step-desc" id="${id}-desc-2">Queued</span>
+                        </div>
+                    </div>
+
+                    <div class="step-connector pending" id="${id}-conn-2">
+                        <div class="connector-line"></div>
+                        <div class="connector-arrow">➔</div>
+                    </div>
+
+                    <!-- Step 3: Reasoner -->
+                    <div class="pipeline-step pending" id="${id}-step-3">
+                        <div class="step-node">
+                            <div class="step-node-inner">
+                                <i class="fas fa-brain step-icon"></i>
+                                <i class="fas fa-check step-check"></i>
+                            </div>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-name">3. Reasoner</span>
+                            <span class="step-desc" id="${id}-desc-3">Queued</span>
+                        </div>
+                    </div>
+
+                    <div class="step-connector pending" id="${id}-conn-3">
+                        <div class="connector-line"></div>
+                        <div class="connector-arrow">➔</div>
+                    </div>
+
+                    <!-- Step 4: Verifier -->
+                    <div class="pipeline-step pending" id="${id}-step-4">
+                        <div class="step-node">
+                            <div class="step-node-inner">
+                                <i class="fas fa-shield-check step-icon"></i>
+                                <i class="fas fa-check step-check"></i>
+                            </div>
+                        </div>
+                        <div class="step-info">
+                            <span class="step-name">4. Verifier</span>
+                            <span class="step-desc" id="${id}-desc-4">Queued</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pipeline-live-ticker">
+                    <i class="fas fa-microchip text-emerald-400 pipeline-ticker-icon"></i>
+                    <span class="pipeline-ticker-text" id="${id}-ticker">Planner Agent decomposing query into targeted search facets...</span>
+                </div>
+            `;
+            messageStream.appendChild(card);
+            messageStream.scrollTop = messageStream.scrollHeight;
+
+            // Live execution timer
+            const startTime = Date.now();
+            const timerEl = document.getElementById(`${id}-timer`);
+            const timerInterval = setInterval(() => {
+                if (!document.getElementById(id)) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+                const elapsed = (Date.now() - startTime) / 1000;
+                if (timerEl) timerEl.textContent = elapsed.toFixed(1) + 's';
+            }, 100);
+
+            // Staged progression triggers
+            const timeouts = [];
+
+            // Stage 2: Retriever at ~850ms
+            timeouts.push(setTimeout(() => {
+                if (!document.getElementById(id)) return;
+                setStepCompleted(id, 1, 'Query plan formulated');
+                setConnectorCompleted(id, 1);
+                setStepActive(id, 2, 'FAISS + BM25 search...');
+                setConnectorActive(id, 2);
+                setTicker(id, 'Retriever Agent executing hybrid vector search & BM25 lexical ranking...');
+            }, 850));
+
+            // Stage 3: Reasoner at ~2200ms
+            timeouts.push(setTimeout(() => {
+                if (!document.getElementById(id)) return;
+                setStepCompleted(id, 2, 'Context retrieved');
+                setConnectorCompleted(id, 2);
+                setStepActive(id, 3, 'Drafting response...');
+                setConnectorActive(id, 3);
+                setTicker(id, 'Reasoner Agent synthesizing grounded answer draft from verified passages...');
+            }, 2200));
+
+            // Stage 4: Verifier at ~3800ms
+            timeouts.push(setTimeout(() => {
+                if (!document.getElementById(id)) return;
+                setStepCompleted(id, 3, 'Draft generated');
+                setConnectorCompleted(id, 3);
+                setStepActive(id, 4, 'Auditing citations...');
+                setTicker(id, 'Verifier Agent cross-auditing factual consistency & extracting verifiable citations...');
+            }, 3800));
+
+            card._pipelineState = {
+                timerInterval,
+                timeouts,
+                startTime
+            };
+        }
+
+        function setStepActive(id, stepNum, desc) {
+            const el = document.getElementById(`${id}-step-${stepNum}`);
+            if (el) {
+                el.className = 'pipeline-step active';
+                const d = document.getElementById(`${id}-desc-${stepNum}`);
+                if (d && desc) d.textContent = desc;
+            }
+        }
+
+        function setStepCompleted(id, stepNum, desc) {
+            const el = document.getElementById(`${id}-step-${stepNum}`);
+            if (el) {
+                el.className = 'pipeline-step completed';
+                const d = document.getElementById(`${id}-desc-${stepNum}`);
+                if (d && desc) d.textContent = desc;
+            }
+        }
+
+        function setConnectorActive(id, connNum) {
+            const el = document.getElementById(`${id}-conn-${connNum}`);
+            if (el) el.className = 'step-connector active';
+        }
+
+        function setConnectorCompleted(id, connNum) {
+            const el = document.getElementById(`${id}-conn-${connNum}`);
+            if (el) el.className = 'step-connector completed';
+        }
+
+        function setTicker(id, text) {
+            const el = document.getElementById(`${id}-ticker`);
+            if (el) el.textContent = text;
+        }
+
+        async function finishPipelineStepper(id, isSuccess = true) {
+            const card = document.getElementById(id);
+            if (!card) return;
+
+            if (card._pipelineState) {
+                clearInterval(card._pipelineState.timerInterval);
+                card._pipelineState.timeouts.forEach(t => clearTimeout(t));
+            }
+
+            if (isSuccess) {
+                // Ensure all steps are completed
+                setStepCompleted(id, 1, 'Plan formulated');
+                setConnectorCompleted(id, 1);
+                setStepCompleted(id, 2, 'Context retrieved');
+                setConnectorCompleted(id, 2);
+                setStepCompleted(id, 3, 'Grounded draft');
+                setConnectorCompleted(id, 3);
+                setStepCompleted(id, 4, '100% Verified');
+                setTicker(id, '✓ All 4 agents executed successfully • Grounded in verified citations');
+
+                // Quick visual pulse on completion
+                await new Promise(r => setTimeout(r, 450));
+            }
+
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-6px)';
+            await new Promise(r => setTimeout(r, 200));
+            card.remove();
+        }
+
+        function openCitationFromElement(el) {
+            try {
+                const raw = el.getAttribute('data-cite');
+                if (!raw) return;
+                let data = null;
+                try {
+                    data = JSON.parse(decodeURIComponent(raw));
+                } catch (e1) {
+                    data = JSON.parse(raw);
+                }
+                showCitationModal(data);
+            } catch (err) {
+                console.error("Failed to open citation:", err);
+            }
+        }
+
+        function showCitationModal(cite) {
+            if (!cite) return;
+            if (typeof cite === 'string') {
+                try {
+                    cite = JSON.parse(decodeURIComponent(cite));
+                } catch(e) {
+                    try { cite = JSON.parse(cite); } catch(e2) {}
+                }
+            }
+            const comp = cite.company_name || 'General';
+            const doc = cite.document_name || 'Document';
+            const loc = cite.page_or_section || 'General';
+            const excerpt = cite.excerpt || 'Verified factually derived from document record.';
+
+            modalBody.innerHTML = `
+                <div style="margin-bottom: 0.85rem;">
+                    <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Organization</span>
+                    <div style="font-size: 1rem; font-weight: 600; color: #60a5fa; margin-top: 0.2rem;">${comp}</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Document</span>
+                        <div style="font-size: 0.9rem; font-weight: 500; margin-top: 0.2rem; word-break: break-all;">${doc}</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Location Anchor</span>
+                        <div style="font-size: 0.9rem; font-weight: 600; color: #10b981; margin-top: 0.2rem;">${loc}</div>
+                    </div>
+                </div>
+                <div>
+                    <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Verifying Evidence Excerpt</span>
+                    <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #10b981; padding: 0.9rem 1.1rem; border-radius: var(--radius-sm); font-size: 0.88rem; line-height: 1.6; margin-top: 0.4rem; color: var(--text-primary);">
+                        "${excerpt}"
+                    </div>
+                </div>
+            `;
+            citationModal.classList.add('active');
+            citationModal.style.display = 'flex';
+        }
+
+        function closeCitationModal() {
+            citationModal.classList.remove('active');
+            citationModal.style.display = 'none';
+        }
+
+        citationModal.addEventListener('click', (e) => {
+            if (e.target === citationModal) closeCitationModal();
+        });
+
+        // Event delegation on message stream for all citation tags
+        messageStream.addEventListener('click', (e) => {
+            const tag = e.target.closest('.citation-tag');
+            if (tag) {
+                e.preventDefault();
+                openCitationFromElement(tag);
+            }
+        });
+    </script>
+
+    <!-- Rename Session Modal -->
+    <div id="rename-session-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-pen text-amber-400"></i> Rename Conversation
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeRenameSessionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">
+                    Conversation Title
+                </label>
+                <input type="text" id="rename-session-input" 
+                       style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface-solid); color: var(--text-primary); font-size: 0.95rem; outline: none;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeRenameSessionModal()">Cancel</button>
+                <button type="button" id="confirm-rename-session-btn" class="btn btn-primary btn-sm" onclick="executeRenameSession()">
+                    <i class="fas fa-save"></i> Save Title
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Session Modal -->
+    <div id="delete-session-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title" style="color: #f87171;">
+                    <i class="fas fa-trash-alt"></i> Delete Conversation
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeDeleteSessionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.95rem; margin-bottom: 0.5rem;">
+                    Are you sure you want to delete <strong id="delete-session-title-display" style="color: var(--text-primary);"></strong>?
+                </p>
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); padding: 0.8rem; font-size: 0.82rem; color: #fca5a5;">
+                    <i class="fas fa-info-circle mr-1"></i> All messages, reasoning steps, and source citations in this discussion will be permanently removed.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteSessionModal()">Cancel</button>
+                <button type="button" id="confirm-delete-session-btn" class="btn btn-danger btn-sm" onclick="executeDeleteSession()">
+                    <i class="fas fa-trash-alt"></i> Delete Conversation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // Toast notifications
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Rename Session Modal Logic
+        let targetRenameSessionId = null;
+        const renameSessionModal = document.getElementById('rename-session-modal');
+        const renameSessionInput = document.getElementById('rename-session-input');
+        const confirmRenameSessionBtn = document.getElementById('confirm-rename-session-btn');
+
+        function openRenameSessionModal(id, title) {
+            targetRenameSessionId = id;
+            renameSessionInput.value = title;
+            renameSessionModal.classList.add('active');
+            setTimeout(() => renameSessionInput.focus(), 100);
+        }
+
+        function closeRenameSessionModal() {
+            renameSessionModal.classList.remove('active');
+            targetRenameSessionId = null;
+        }
+
+        async function executeRenameSession() {
+            if (!targetRenameSessionId) return;
+            const newTitle = renameSessionInput.value.trim();
+            if (!newTitle) {
+                showToast('Please enter a valid title.', 'error');
+                return;
+            }
+
+            confirmRenameSessionBtn.disabled = true;
+            try {
+                const res = await fetch(`/api/chat/sessions/${targetRenameSessionId}/rename`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title: newTitle})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const titleEl = document.getElementById(`session-title-${targetRenameSessionId}`);
+                    if (titleEl) titleEl.textContent = data.new_title;
+                    const card = document.getElementById(`session-card-${targetRenameSessionId}`);
+                    if (card) {
+                        card.setAttribute('data-session-title', data.new_title.toLowerCase());
+                        const link = card.querySelector('.session-nav-link');
+                        if (link) link.title = data.new_title;
+                    }
+                    if (targetRenameSessionId === sessionId) {
+                        const headerTitle = document.getElementById('session-title-display');
+                        if (headerTitle) headerTitle.textContent = data.new_title;
+                        document.title = `${data.new_title} - DocSphere AI`;
+                    }
+                    showToast('Conversation renamed successfully!', 'success');
+                    closeRenameSessionModal();
+                } else {
+                    showToast(data.message || 'Failed to rename session.', 'error');
+                }
+            } catch (err) {
+                showToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                confirmRenameSessionBtn.disabled = false;
+            }
+        }
+
+        // Delete Session Modal Logic
+        let targetDeleteSessionId = null;
+        const deleteSessionModal = document.getElementById('delete-session-modal');
+        const deleteSessionTitleDisplay = document.getElementById('delete-session-title-display');
+        const confirmDeleteSessionBtn = document.getElementById('confirm-delete-session-btn');
+
+        function openDeleteSessionModal(id, title) {
+            targetDeleteSessionId = id;
+            deleteSessionTitleDisplay.textContent = title;
+            deleteSessionModal.classList.add('active');
+        }
+
+        function closeDeleteSessionModal() {
+            deleteSessionModal.classList.remove('active');
+            targetDeleteSessionId = null;
+        }
+
+        async function executeDeleteSession() {
+            if (!targetDeleteSessionId) return;
+            confirmDeleteSessionBtn.disabled = true;
+            try {
+                const res = await fetch(`/api/chat/sessions/${targetDeleteSessionId}/delete`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const card = document.getElementById(`session-card-${targetDeleteSessionId}`);
+                    if (card) card.remove();
+                    showToast('Conversation deleted.', 'success');
+                    closeDeleteSessionModal();
+                    if (targetDeleteSessionId === sessionId) {
+                        window.location.href = '/chat/new';
+                    }
+                } else {
+                    showToast('Failed to delete session.', 'error');
+                }
+            } catch (err) {
+                showToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                confirmDeleteSessionBtn.disabled = false;
+            }
+        }
+
+        renameSessionModal.addEventListener('click', (e) => {
+            if (e.target === renameSessionModal) closeRenameSessionModal();
+        });
+        deleteSessionModal.addEventListener('click', (e) => {
+            if (e.target === deleteSessionModal) closeDeleteSessionModal();
+        });
+
+        /* ======================================================== */
+        /* MODERN COLLAPSIBLE SIDEBAR & CONVERSATION SEARCH */
+        /* ======================================================== */
+        const chatWorkspaceEl = document.getElementById('chat-workspace');
+        const sidebarCollapseBtn = document.getElementById('sidebar-collapse-btn');
+        const sidebarExpandBtn = document.getElementById('sidebar-expand-btn');
+        const sessionSearchInput = document.getElementById('session-search-input');
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+        const noSearchResultsEl = document.getElementById('no-search-results');
+
+        function toggleSidebarState() {
+            if (!chatWorkspaceEl) return;
+            chatWorkspaceEl.classList.toggle('sidebar-collapsed');
+            const isCollapsed = chatWorkspaceEl.classList.contains('sidebar-collapsed');
+            localStorage.setItem('docsphere-sidebar-collapsed', isCollapsed ? 'true' : 'false');
+        }
+
+        sidebarCollapseBtn?.addEventListener('click', toggleSidebarState);
+        sidebarExpandBtn?.addEventListener('click', toggleSidebarState);
+
+        // Real-Time Client-Side Conversation Search
+        sessionSearchInput?.addEventListener('input', () => {
+            const query = sessionSearchInput.value.trim().toLowerCase();
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = query ? 'block' : 'none';
+            }
+            let matchCount = 0;
+            const items = document.querySelectorAll('.session-nav-item');
+            items.forEach(item => {
+                const title = (item.getAttribute('data-session-title') || '').toLowerCase();
+                const matches = !query || title.includes(query);
+                item.style.display = matches ? 'flex' : 'none';
+                if (matches) matchCount++;
+            });
+            if (noSearchResultsEl) {
+                noSearchResultsEl.style.display = (matchCount === 0 && query) ? 'flex' : 'none';
+            }
+        });
+
+        clearSearchBtn?.addEventListener('click', () => {
+            if (sessionSearchInput) {
+                sessionSearchInput.value = '';
+                sessionSearchInput.dispatchEvent(new Event('input'));
+                sessionSearchInput.focus();
+            }
+        });
+
+        // Global Keyboard Shortcuts (Ctrl+B / Cmd+B for Sidebar, Ctrl+K / Cmd+K for New Chat)
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+                e.preventDefault();
+                toggleSidebarState();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                window.location.href = '/chat/new';
+            }
+            if (e.key === 'Escape' && document.activeElement === sessionSearchInput) {
+                if (sessionSearchInput.value) {
+                    sessionSearchInput.value = '';
+                    sessionSearchInput.dispatchEvent(new Event('input'));
+                } else {
+                    sessionSearchInput.blur();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

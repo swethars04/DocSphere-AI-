@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocSphere AI - Enterprise Multi-Document Intelligence</title>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-sm);
+            background: var(--primary-glow);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: var(--font-heading);
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .upload-section {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-md);
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(0,0,0,0.1);
+        }
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+        }
+        .company-badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 9999px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .format-badge {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .format-pdf { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .format-docx { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .format-html { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .format-xbrl, .format-xml { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .format-txt { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 0.85rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: rgba(0,0,0,0.2);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        tr:hover {
+            background: var(--bg-hover);
+        }
+        .action-btn-group {
+            display: flex;
+            gap: 0.35rem;
+            align-items: center;
+        }
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-surface-solid);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .action-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        .action-btn.btn-download:hover {
+            color: #38bdf8;
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+        }
+        .action-btn.btn-rename:hover {
+            color: #fbbf24;
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.15);
+        }
+        /* Prominent Red Delete Button */
+        .action-btn.btn-delete {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #f87171;
+        }
+        .action-btn.btn-delete:hover {
+            color: #ffffff;
+            border-color: #ef4444;
+            background: #ef4444;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+        }
+        .action-btn.btn-chat:hover {
+            color: #34d399;
+            border-color: #34d399;
+            background: var(--primary-glow);
+        }
+    </style>
+
+</head>
+<body>
+    <!-- Top Header Navigation -->
+    <header>
+        <a href="/" class="logo-container">
+            <div class="logo-icon"><i class="fas fa-layer-group"></i></div>
+            <h1 class="logo-text">DocSphere AI</h1>
+        </a>
+
+        <!-- Center Navigation Tabs -->
+        <div class="nav-tabs-wrapper">
+            <a href="/" class="nav-tab-link active">
+                <i class="fas fa-cloud-upload-alt"></i> Upload & Ingest
+            </a>
+            <a href="/documents" class="nav-tab-link">
+                <i class="fas fa-folder-open"></i> Document Storage
+            </a>
+            <a href="/chat" class="nav-tab-link">
+                <i class="fas fa-comments"></i> RAG Chatbot
+            </a>
+            <a href="/database" class="nav-tab-link">
+                <i class="fas fa-database"></i> Database
+            </a>
+        </div>
+
+        <div class="header-actions">
+            <button id="theme-toggle" class="btn btn-secondary btn-icon" title="Toggle Light/Dark Theme">
+                <i class="fas fa-sun"></i>
+            </button>
+            <a href="/chat" class="btn btn-primary">
+                <i class="fas fa-comments"></i> Launch Chat
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container" style="max-width: 1380px; margin: 1.75rem auto; padding: 0 1.5rem; width: 100%; flex: 1;">
+        
+        <!-- Platform Summary Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-building"></i></div>
+                <div>
+                    <div class="stat-value">{{ companies|length }}</div>
+                    <div class="stat-label">Organizations Tagged</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                <div>
+                    <div class="stat-value">{{ documents|length }}</div>
+                    <div class="stat-label">Total Documents Stored</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-cubes"></i></div>
+                <div>
+                    <div class="stat-value">PDF, DOCX, TXT, XML</div>
+                    <div class="stat-label">Multi-Format Extraction</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-robot"></i></div>
+                <div>
+                    <div class="stat-value">4-Agent</div>
+                    <div class="stat-label">Self-Correcting RAG</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload & Ingestion Section -->
+        <div class="upload-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <div>
+                    <h2 style="font-size: 1.3rem; font-family: var(--font-heading); margin-bottom: 0.25rem;">
+                        <i class="fas fa-cloud-upload-alt text-emerald-500 mr-2"></i> Ingest Multi-Format Documents
+                    </h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                        Tag uploads by company for strict retrieval isolation. Supported: PDF, Word (DOCX), Text (TXT), HTML, and XBRL/XML.
+                    </p>
+                </div>
+            </div>
+
+            <form id="upload-form">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.4rem;">
+                            Organization / Tag <span style="font-weight: 400; color: var(--text-muted);">(Optional - defaults to "General")</span>
+                        </label>
+                        <input type="text" id="company-name-input" name="company_name" list="companies-list"
+                               placeholder="e.g. Study, Work, Tata Steel, Personal..."
+                               style="width: 100%; padding: 0.7rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface-solid); color: var(--text-primary);">
+                        <datalist id="companies-list">
+                            {% for c in companies %}
+                                <option value="{{ c.name }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.4rem;">
+                            Industry / Sector (Optional)
+                        </label>
+                        <input type="text" id="company-sector-input" name="sector"
+                               placeholder="e.g. Manufacturing, IT, Healthcare..."
+                               style="width: 100%; padding: 0.7rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface-solid); color: var(--text-primary);">
+                    </div>
+                </div>
+
+                <!-- Dropzone -->
+                <div class="dropzone" id="dropzone">
+                    <input type="file" id="file-input" name="files" multiple accept=".pdf,.docx,.doc,.txt,.html,.htm,.xml,.xbrl" style="display: none;">
+                    <i class="fas fa-file-invoice text-3xl mb-3 text-emerald-500" style="font-size: 2.25rem;"></i>
+                    <p style="font-size: 1rem; font-weight: 600;">Drag and drop files here, or <span style="color: var(--primary);">browse</span></p>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.3rem;">
+                        Upload multiple files at once. Each file will be parsed and indexed with exact page & section citations.
+                    </p>
+                    <div id="file-selection-list" style="margin-top: 0.8rem; font-size: 0.8rem; color: var(--text-primary);"></div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                    <button type="submit" id="upload-btn" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+                        <i class="fas fa-bolt"></i> Parse & Build Hybrid Index
+                    </button>
+                </div>
+            </form>
+
+            <div id="upload-status" style="margin-top: 1rem; display: none;"></div>
+        </div>
+
+        <!-- Ingested Document Knowledge Bases (Shows ONLY the just uploaded input, changes per upload) -->
+        <div style="margin-bottom: 3rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+                <div>
+                    <h2 style="font-size: 1.25rem; font-family: var(--font-heading); margin-bottom: 0.2rem;">
+                        <i class="fas fa-bolt text-emerald-500 mr-2"></i> Ingested Documents (Recent Uploads)
+                    </h2>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                        Shows documents processed in this upload session. All files are archived permanently in Document Storage.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <a href="/documents" class="btn btn-secondary btn-sm" style="font-weight: 600;">
+                        <i class="fas fa-folder-open text-amber-400"></i> Open Document Storage ({{ documents|length }}) →
+                    </a>
+                </div>
+            </div>
+
+            <!-- Container for just-uploaded input -->
+            <div id="recent-uploads-container">
+                <!-- Dynamically populated or default empty session state -->
+                <div id="no-recent-uploads" style="text-align: center; padding: 3rem 1.5rem; background: var(--bg-surface); border: 1px dashed var(--border); border-radius: var(--radius-md);">
+                    <i class="fas fa-cloud-upload-alt text-4xl mb-3 text-slate-500" style="font-size: 2.25rem;"></i>
+                    <p style="font-size: 1.05rem; font-weight: 600;">Ready for document upload</p>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.3rem; margin-bottom: 1.25rem;">
+                        Select or drag files above to parse and index them. Your freshly ingested files will appear here immediately after each upload.
+                    </p>
+                    <a href="/documents" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-database mr-1"></i> Browse All {{ documents|length }} Files in Document Storage
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- RENAME MODAL DIALOG -->
+    <!-- ===================================================================== -->
+    <div id="rename-modal-overlay" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-pen text-amber-400"></i> Rename Document
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeRenameModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">
+                    Document Title / File Name
+                </label>
+                <input type="text" id="rename-input" 
+                       style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface-solid); color: var(--text-primary); font-size: 0.95rem; outline: none;">
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                    The file extension will be preserved automatically.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeRenameModal()">Cancel</button>
+                <button type="button" id="confirm-rename-btn" class="btn btn-primary btn-sm" onclick="executeRename()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- DELETE CONFIRMATION MODAL DIALOG -->
+    <!-- ===================================================================== -->
+    <div id="delete-modal-overlay" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title" style="color: #f87171;">
+                    <i class="fas fa-exclamation-triangle"></i> Delete Document
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.95rem; margin-bottom: 0.75rem;">
+                    Are you sure you want to delete <strong id="delete-doc-name-display" style="color: var(--text-primary);"></strong>?
+                </p>
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; font-size: 0.82rem; color: #fca5a5;">
+                    <i class="fas fa-info-circle mr-1"></i> This will permanently remove the physical file from server storage and purge all its indexed semantic chunks from FAISS and BM25 search indices.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" id="confirm-delete-btn" class="btn btn-danger btn-sm" onclick="executeDelete()">
+                    <i class="fas fa-trash-alt"></i> Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Active Document IDs for Client-side Validation -->
+    <script type="application/json" id="active-doc-ids-data">{{ documents | map(attribute='id') | list | tojson }}</script>
+
+    <script>
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        const savedTheme = localStorage.getItem('docusphere-theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+            themeToggle.querySelector('i').classList.replace('fa-sun', 'fa-moon');
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('docusphere-theme', isLight ? 'light' : 'dark');
+            themeToggle.querySelector('i').classList.toggle('fa-sun', !isLight);
+            themeToggle.querySelector('i').classList.toggle('fa-moon', isLight);
+        });
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Dropzone & File Selection
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-selection-list');
+        const uploadForm = document.getElementById('upload-form');
+        const uploadBtn = document.getElementById('upload-btn');
+        const uploadStatus = document.getElementById('upload-status');
+        const recentContainer = document.getElementById('recent-uploads-container');
+
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                renderFileList();
+            }
+        });
+        fileInput.addEventListener('change', renderFileList);
+
+        function renderFileList() {
+            if (!fileInput.files.length) {
+                fileList.innerHTML = '';
+                return;
+            }
+            let html = '<div style="background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: var(--radius-sm); display: inline-block;">';
+            html += `<strong>${fileInput.files.length} file(s) selected:</strong> `;
+            const names = Array.from(fileInput.files).map(f => f.name).join(', ');
+            html += `<span style="color: var(--text-secondary);">${names}</span></div>`;
+            fileList.innerHTML = html;
+        }
+
+        // Render Recent Uploads Table (shows only just-uploaded files)
+        function renderRecentUploads(companyName, docs) {
+            if (!docs || docs.length === 0) return;
+            
+            let rowsHtml = '';
+            docs.forEach(doc => {
+                const ext = (doc.file_type || 'txt').toLowerCase();
+                let iconClass = 'fa-file-alt';
+                let fmtClass = 'format-txt';
+                if (ext === 'pdf') { iconClass = 'fa-file-pdf'; fmtClass = 'format-pdf'; }
+                else if (['doc', 'docx'].includes(ext)) { iconClass = 'fa-file-word'; fmtClass = 'format-docx'; }
+                else if (['html', 'htm'].includes(ext)) { iconClass = 'fa-file-code'; fmtClass = 'format-html'; }
+                else if (['xbrl', 'xml'].includes(ext)) { iconClass = 'fa-file-invoice-dollar'; fmtClass = 'format-xbrl'; }
+
+                const safeName = (doc.filename || '').replace(/'/g, "\\'");
+
+                rowsHtml += `
+                <tr id="recent-row-${doc.id}">
+                    <td style="font-weight: 600;">
+                        <i class="fas ${iconClass} text-slate-400 mr-2"></i>
+                        <span id="recent-title-${doc.id}">${doc.filename}</span>
+                    </td>
+                    <td><span class="company-badge">${companyName}</span></td>
+                    <td><span class="format-badge ${fmtClass}">${ext.toUpperCase()}</span></td>
+                    <td>${doc.total_pages_or_sections || 1}</td>
+                    <td><span class="text-emerald-500 font-semibold">${doc.chunks_indexed || 0} chunks</span></td>
+                    <td><span style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">Just Now</span></td>
+                    <td style="text-align: center; width: 175px; min-width: 175px; white-space: nowrap;">
+                        <div class="action-btn-group" style="justify-content: center;">
+                            <a href="/api/documents/${doc.id}/download" download="${doc.filename}" class="action-btn btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <button onclick="openRenameModal(${doc.id}, '${safeName}')" class="action-btn btn-rename" title="Rename">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <!-- Prominent Red Delete Button -->
+                            <button onclick="openDeleteModal(${doc.id}, '${safeName}')" class="action-btn btn-delete" title="Delete">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            <a href="/chat/new" class="action-btn btn-chat" title="Query in New Chat">
+                                <i class="fas fa-comments"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            recentContainer.innerHTML = `
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document Name</th>
+                            <th>Organization</th>
+                            <th>Type</th>
+                            <th>Pages / Sections</th>
+                            <th>Indexed Chunks</th>
+                            <th>Uploaded</th>
+                            <th style="text-align: center; width: 175px; min-width: 175px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>`;
+        }
+
+        function renderEmptyRecentState() {
+            recentContainer.innerHTML = `
+                <div id="no-recent-uploads" style="text-align: center; padding: 3rem 1.5rem; background: var(--bg-surface); border: 1px dashed var(--border); border-radius: var(--radius-md);">
+                    <i class="fas fa-cloud-upload-alt text-4xl mb-3 text-slate-500" style="font-size: 2.25rem;"></i>
+                    <p style="font-size: 1.05rem; font-weight: 600;">Ready for document upload</p>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.3rem; margin-bottom: 1.25rem;">
+                        Select or drag files above to parse and index them. Your freshly ingested files will appear here immediately after each upload.
+                    </p>
+                    <a href="/documents" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-database mr-1"></i> Browse All Files in Document Storage
+                    </a>
+                </div>
+            `;
+        }
+
+        function removeDocFromSessionStorage(docId) {
+            try {
+                const saved = sessionStorage.getItem('recent_upload_batch');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    const remaining = (parsed.docs || []).filter(d => d.id !== docId);
+                    if (remaining.length > 0) {
+                        sessionStorage.setItem('recent_upload_batch', JSON.stringify({
+                            company: parsed.company,
+                            docs: remaining
+                        }));
+                    } else {
+                        sessionStorage.removeItem('recent_upload_batch');
+                        renderEmptyRecentState();
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function updateDocNameInSessionStorage(docId, newName) {
+            try {
+                const saved = sessionStorage.getItem('recent_upload_batch');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.docs) {
+                        parsed.docs.forEach(d => {
+                            if (d.id === docId) d.filename = newName;
+                        });
+                        sessionStorage.setItem('recent_upload_batch', JSON.stringify(parsed));
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // On Page Load: Validate recent uploads against active database documents
+        const activeDocIdsDataEl = document.getElementById('active-doc-ids-data');
+        const activeDocIds = new Set(activeDocIdsDataEl ? JSON.parse(activeDocIdsDataEl.textContent || '[]') : []);
+        const savedRecent = sessionStorage.getItem('recent_upload_batch');
+        if (savedRecent) {
+            try {
+                const parsed = JSON.parse(savedRecent);
+                if (parsed.docs && parsed.docs.length > 0) {
+                    const validDocs = parsed.docs.filter(d => activeDocIds.has(d.id));
+                    if (validDocs.length > 0) {
+                        sessionStorage.setItem('recent_upload_batch', JSON.stringify({
+                            company: parsed.company,
+                            docs: validDocs
+                        }));
+                        renderRecentUploads(parsed.company, validDocs);
+                    } else {
+                        sessionStorage.removeItem('recent_upload_batch');
+                        renderEmptyRecentState();
+                    }
+                } else {
+                    sessionStorage.removeItem('recent_upload_batch');
+                    renderEmptyRecentState();
+                }
+            } catch (e) {
+                console.error(e);
+                sessionStorage.removeItem('recent_upload_batch');
+                renderEmptyRecentState();
+            }
+        }
+
+        // Form Submission (Classic Clean Model)
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!fileInput.files.length) {
+                showToast('Please select at least one document to upload.', 'error');
+                return;
+            }
+
+            const formData = new FormData(uploadForm);
+            const companyNameInput = document.getElementById('company-name-input').value.trim();
+            const companyName = companyNameInput || 'General';
+
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Parsing & Building Index...';
+            uploadStatus.style.display = 'block';
+            uploadStatus.innerHTML = `
+                <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-sm); padding: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-circle-notch fa-spin text-blue-500" style="font-size: 1.25rem;"></i>
+                    <div>
+                        <div style="font-weight: 600;">Processing & Ingesting Documents...</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Extracting text, generating FAISS semantic vectors, and building BM25 sparse index. This may take a few moments.</div>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/documents/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const res = await response.json();
+
+                if (res.success && res.processed_documents && res.processed_documents.length > 0) {
+                    uploadStatus.innerHTML = `
+                        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <i class="fas fa-check-circle text-emerald-500" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">${res.processed_documents.length} Document(s) Successfully Ingested!</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Indexed with tags for "${companyName}". Archived permanently in Document Storage.</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <a href="/documents" class="btn btn-secondary btn-sm"><i class="fas fa-folder-open"></i> View Storage</a>
+                                <a href="/chat/new" class="btn btn-primary btn-sm"><i class="fas fa-comments"></i> Query in Chat</a>
+                            </div>
+                        </div>
+                    `;
+
+                    // Update recent uploads table below
+                    renderRecentUploads(companyName, res.processed_documents);
+                    sessionStorage.setItem('recent_upload_batch', JSON.stringify({
+                        company: companyName,
+                        docs: res.processed_documents
+                    }));
+
+                    showToast(`Successfully ingested ${res.processed_documents.length} document(s)!`, 'success');
+                    uploadForm.reset();
+                    fileList.innerHTML = '';
+                } else {
+                    uploadStatus.innerHTML = `
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); padding: 1rem; color: #f87171;">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> ${res.message || 'Failed to process files.'}
+                        </div>
+                    `;
+                    showToast(res.message || 'Upload failed.', 'error');
+                }
+            } catch (err) {
+                uploadStatus.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); padding: 1rem; color: #f87171;">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Error: ${err.message}
+                    </div>
+                `;
+                showToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-bolt"></i> Parse & Build Hybrid Index';
+            }
+        });
+
+        // Rename Modal Logic
+        let currentRenameDocId = null;
+        const renameModal = document.getElementById('rename-modal-overlay');
+        const renameInput = document.getElementById('rename-input');
+        const confirmRenameBtn = document.getElementById('confirm-rename-btn');
+
+        function openRenameModal(id, currentName) {
+            currentRenameDocId = id;
+            renameInput.value = currentName;
+            renameModal.classList.add('active');
+            setTimeout(() => renameInput.focus(), 100);
+        }
+
+        function closeRenameModal() {
+            renameModal.classList.remove('active');
+            currentRenameDocId = null;
+        }
+
+        async function executeRename() {
+            if (!currentRenameDocId) return;
+            const newName = renameInput.value.trim();
+            if (!newName) {
+                showToast('Please enter a valid document name.', 'error');
+                return;
+            }
+
+            confirmRenameBtn.disabled = true;
+            confirmRenameBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const res = await fetch(`/api/documents/${currentRenameDocId}/rename`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({new_name: newName})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const titleEl = document.getElementById(`recent-title-${currentRenameDocId}`);
+                    if (titleEl) titleEl.textContent = data.new_name;
+                    updateDocNameInSessionStorage(currentRenameDocId, data.new_name);
+                    showToast(`Renamed to "${data.new_name}" successfully!`, 'success');
+                    closeRenameModal();
+                } else {
+                    showToast(data.message || 'Failed to rename document.', 'error');
+                }
+            } catch (err) {
+                showToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                confirmRenameBtn.disabled = false;
+                confirmRenameBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+            }
+        }
+
+        renameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeRename();
+            } else if (e.key === 'Escape') {
+                closeRenameModal();
+            }
+        });
+
+        // Delete Modal Logic
+        let currentDeleteDocId = null;
+        const deleteModal = document.getElementById('delete-modal-overlay');
+        const deleteDocNameDisplay = document.getElementById('delete-doc-name-display');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+        function openDeleteModal(id, currentName) {
+            currentDeleteDocId = id;
+            deleteDocNameDisplay.textContent = currentName;
+            deleteModal.classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.remove('active');
+            currentDeleteDocId = null;
+        }
+
+        async function executeDelete() {
+            if (!currentDeleteDocId) return;
+
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+            try {
+                const res = await fetch(`/api/documents/${currentDeleteDocId}/delete`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (data.success || data.message === 'Document not found.' || data.message === 'Document is already removed.') {
+                    const row = document.getElementById(`recent-row-${currentDeleteDocId}`);
+                    if (row) {
+                        row.remove();
+                    }
+                    removeDocFromSessionStorage(currentDeleteDocId);
+                    showToast('Document deleted successfully.', 'success');
+                    closeDeleteModal();
+                } else {
+                    showToast(data.message || 'Failed to delete document.', 'error');
+                }
+            } catch (err) {
+                showToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+            }
+        }
+
+        renameModal.addEventListener('click', (e) => {
+            if (e.target === renameModal) closeRenameModal();
+        });
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) closeDeleteModal();
+        });
+    </script>
+</body>
+</html>

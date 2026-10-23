@@ -38,20 +38,12 @@ def create_app():
     def page_not_found(e):
         return render_template('index.html', error_msg="The page you requested was not found."), 404
 
-    # Warm up OCR engine asynchronously to prevent first-request cold-start latency
-    import threading
-    def _warmup():
-        try:
-            from core.parsers.pdf_parser import _get_ocr_engine
-            _get_ocr_engine()
-        except Exception:
-            pass
-    threading.Thread(target=_warmup, daemon=True).start()
-
     return app
 
+# WSGI Application instance for Gunicorn / Render
+app = create_app()
+
 if __name__ == '__main__':
-    app = create_app()
-    port = app.config.get('PORT', 5000)
+    port = int(app.config.get('PORT', 5000))
     logger.info(f"Starting DocSphere AI platform on port {port}...")
     app.run(host='0.0.0.0', port=port, debug=app.config.get('DEBUG', False))

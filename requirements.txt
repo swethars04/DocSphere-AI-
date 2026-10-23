@@ -21,3 +21,7 @@ rank-bm25>=0.2.2          # BM25 sparse lexical search engine
 openai>=1.20.0            # Compatible with Groq API and OpenAI
 pydantic>=2.6.0           # Data validation and strict structured schemas
 requests>=2.31.0
+pypdf>=6.0.0
+
+# Production WSGI Server (Render / Cloud Deployment)
+gunicorn>=21.2.0

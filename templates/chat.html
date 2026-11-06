@@ -451,9 +451,11 @@
             <a href="/chat" class="nav-tab-link active">
                 <i class="fas fa-comments"></i> RAG Chatbot
             </a>
+            {% if current_user and current_user.role == 'admin' %}
             <a href="/database" class="nav-tab-link">
                 <i class="fas fa-database"></i> Database
             </a>
+            {% endif %}
         </div>
 
         <div class="header-actions">
@@ -463,6 +465,24 @@
             <a href="/chat/new" class="btn btn-primary btn-sm" style="text-decoration: none;">
                 <i class="fas fa-plus" style="text-decoration: none;"></i> New Chat
             </a>
+
+            {% if current_user %}
+            <!-- User Profile & Logout -->
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <a href="/profile" class="user-profile-badge" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.06); padding: 0.3rem 0.65rem 0.3rem 0.35rem; border-radius: 9999px; border: 1px solid var(--border); text-decoration: none; transition: all 0.2s;" title="View Profile & Settings">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; background: {{ current_user.avatar_color or '#10b981' }}; color: #042f22; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700;">
+                        {{ current_user.full_name[:2].upper() }}
+                    </div>
+                    <div style="display: flex; flex-direction: column; text-align: left; line-height: 1.1;">
+                        <span style="font-size: 0.78rem; font-weight: 600; color: #ffffff;">{{ current_user.full_name.split()[0] }}</span>
+                        <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: {% if current_user.role == 'admin' %}#34d399{% else %}#38bdf8{% endif %};">{{ current_user.role }}</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('auth.logout') }}" style="color: var(--text-muted); font-size: 0.82rem; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); transition: all 0.2s;" title="Sign Out">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+            {% endif %}
         </div>
     </header>
 
@@ -736,11 +756,64 @@
             themeToggle.querySelector('i').classList.toggle('fa-moon', isLight);
         });
 
+        // Clean and Render Markdown with LaTeX math sanitization
+        function renderMarkdownClean(rawText) {
+            if (!rawText) return '';
+            let text = rawText;
+            
+            // Clean block LaTeX: $$ ... $$
+            text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, expr) => {
+                let simplified = expr;
+                for (let i = 0; i < 3; i++) {
+                    simplified = simplified.replace(/\\text\{([^{}]+)\}/g, '$1');
+                    simplified = simplified.replace(/\\mathbf\{([^{}]+)\}/g, '$1');
+                    simplified = simplified.replace(/\\textbf\{([^{}]+)\}/g, '$1');
+                }
+                simplified = simplified.replace(/\\times/g, '×')
+                                       .replace(/\\div/g, '÷')
+                                       .replace(/\\pm/g, '±')
+                                       .replace(/\\le/g, '≤')
+                                       .replace(/\\ge/g, '≥')
+                                       .replace(/\\neq/g, '≠')
+                                       .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '($1 / $2)')
+                                       .replace(/\s+/g, ' ')
+                                       .trim();
+                return `**${simplified}**`;
+            });
+
+            // Clean inline LaTeX: $ ... $ (ignoring plain currency like $100)
+            text = text.replace(/(?<!\\)\$([^\$\n]+?)(?<!\\)\$/g, (match, expr) => {
+                if (/[\\=+\-×÷/]/.test(expr)) {
+                    let simplified = expr;
+                    for (let i = 0; i < 3; i++) {
+                        simplified = simplified.replace(/\\text\{([^{}]+)\}/g, '$1');
+                        simplified = simplified.replace(/\\mathbf\{([^{}]+)\}/g, '$1');
+                        simplified = simplified.replace(/\\textbf\{([^{}]+)\}/g, '$1');
+                    }
+                    simplified = simplified.replace(/\\times/g, '×')
+                                           .replace(/\\div/g, '÷')
+                                           .replace(/\\pm/g, '±')
+                                           .replace(/\\le/g, '≤')
+                                           .replace(/\\ge/g, '≥')
+                                           .replace(/\\neq/g, '≠')
+                                           .replace(/\s+/g, ' ')
+                                           .trim();
+                    return `**${simplified}**`;
+                }
+                return match;
+            });
+
+            if (typeof marked !== 'undefined') {
+                return marked.parse(text);
+            }
+            return text;
+        }
+
         // Render Existing Markdown Messages
         document.querySelectorAll('.message-content[data-raw]').forEach(el => {
             const raw = el.getAttribute('data-raw');
-            if (raw && typeof marked !== 'undefined') {
-                el.innerHTML = marked.parse(raw);
+            if (raw) {
+                el.innerHTML = renderMarkdownClean(raw);
             }
         });
         messageStream.scrollTop = messageStream.scrollHeight;
@@ -856,7 +929,7 @@
             const bubble = document.createElement('div');
             bubble.className = `message-bubble ${role}`;
 
-            const parsedHtml = (typeof marked !== 'undefined') ? marked.parse(content) : content;
+            const parsedHtml = renderMarkdownClean(content);
 
             if (role === 'user') {
                 bubble.innerHTML = `
@@ -1036,6 +1109,15 @@
                 }
                 const elapsed = (Date.now() - startTime) / 1000;
                 if (timerEl) timerEl.textContent = elapsed.toFixed(1) + 's';
+
+                // Real-time status updates if processing complex queries
+                if (elapsed > 8 && elapsed <= 18) {
+                    setTicker(id, 'Synthesizing evidence across multi-page document passages...');
+                } else if (elapsed > 18 && elapsed <= 28) {
+                    setTicker(id, 'AI model queue active — waiting for Groq rate limit bucket...');
+                } else if (elapsed > 28) {
+                    setTicker(id, 'Deep compliance verification — finalizing verifiable source citations...');
+                }
             }, 100);
 
             // Staged progression triggers

@@ -1,6 +1,7 @@
 import os
 import io
 import json
+import uuid
 import unittest
 import pymupdf
 from PIL import Image, ImageDraw
@@ -8,7 +9,7 @@ from PIL import Image, ImageDraw
 from app import create_app
 from config import Config
 from db.database import get_db_connection, init_db
-from db.repositories import DocumentRepository, ChatRepository, CompanyRepository
+from db.repositories import DocumentRepository, ChatRepository, CompanyRepository, UserRepository
 from core.models import is_information_unavailable
 from core.parsers.base_parser import BaseParser
 from core.parsers.pdf_parser import PDFParser
@@ -31,6 +32,13 @@ class DocuSphereFullWebsiteTestCase(unittest.TestCase):
 
         # Ensure database is initialized
         init_db()
+
+        # Authenticate default test client as Compliance Admin
+        with cls.client.session_transaction() as sess:
+            sess['user_id'] = 1
+            sess['user_email'] = 'admin@docusphere.ai'
+            sess['user_name'] = 'Compliance Admin'
+            sess['user_role'] = 'admin'
 
         # Temporary files to clean up
         cls.temp_files = []
@@ -302,6 +310,172 @@ class DocuSphereFullWebsiteTestCase(unittest.TestCase):
         raw = "Line 1\t\twith   extra   spaces.\n\n\n\nLine 2\xa0non-breaking."
         cleaned = BaseParser.clean_text(raw)
         self.assertEqual(cleaned, "Line 1 with extra spaces.\n\nLine 2 non-breaking.")
+
+    # ==========================================
+    # 8. AUTHENTICATION & RBAC PERMISSION TESTS
+    # ==========================================
+
+    def test_13_unauthenticated_user_redirected_to_login(self):
+        """Verify unauthenticated requests to protected endpoints redirect to /login."""
+        anon_client = self.app.test_client()
+        res = anon_client.get('/')
+        self.assertEqual(res.status_code, 302)
+        self.assertIn('/login', res.headers.get('Location', ''))
+
+        # API calls receive 401 JSON
+        api_res = anon_client.get('/api/documents')
+        self.assertEqual(api_res.status_code, 401)
+        self.assertFalse(api_res.get_json()['success'])
+
+    def test_14_demo_login_and_persona_switch(self):
+        """Verify 1-click demo login establishes authentic user sessions."""
+        client = self.app.test_client()
+        res = client.get('/demo-login/admin', follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        # Check me endpoint
+        me_res = client.get('/api/auth/me')
+        self.assertEqual(me_res.status_code, 200)
+        user_data = me_res.get_json()['user']
+        self.assertEqual(user_data['email'], 'admin@docusphere.ai')
+        self.assertEqual(user_data['role'], 'admin')
+
+    def test_15_rbac_analyst_cannot_access_database_but_can_upload(self):
+        """Verify Role-Based Access Control blocks Analyst from internal database while allowing document ingestion."""
+        analyst_client = self.app.test_client()
+        with analyst_client.session_transaction() as sess:
+            sess['user_id'] = 2
+            sess['user_email'] = 'analyst@docusphere.ai'
+            sess['user_role'] = 'analyst'
+
+        # Analyst cannot view internal database inspector (returns 403)
+        db_res = analyst_client.get('/database')
+        self.assertEqual(db_res.status_code, 403)
+
+        # Analyst CAN trigger document upload (authorized, returns 400 when empty files provided, not 403)
+        upload_res = analyst_client.post('/api/documents/upload', data={})
+        self.assertEqual(upload_res.status_code, 400)
+        self.assertIn("No files provided", upload_res.get_json()['message'])
+
+    def test_16_admin_passcode_registration_security(self):
+        """Verify registration flow enforces least privilege and requires secret passcode for admin role."""
+        test_client = self.app.test_client()
+        unique_suffix = uuid.uuid4().hex[:6]
+        email_analyst = f"analyst_{unique_suffix}@example.com"
+        email_invalid = f"hacker_{unique_suffix}@example.com"
+        email_admin = f"admin_{unique_suffix}@example.com"
+
+        # 1. Blank passcode -> defaults to analyst
+        res_analyst = test_client.post('/register', json={
+            "full_name": "Test Analyst User",
+            "email": email_analyst,
+            "password": "securepassword123",
+            "admin_code": ""
+        })
+        self.assertEqual(res_analyst.status_code, 200)
+        self.assertEqual(res_analyst.get_json()["user"]["role"], "analyst")
+
+        # 2. Invalid passcode -> rejected with 400 error
+        res_invalid = test_client.post('/register', json={
+            "full_name": "Hacker Attempt",
+            "email": email_invalid,
+            "password": "securepassword123",
+            "admin_code": "wrong_guess_code"
+        })
+        self.assertEqual(res_invalid.status_code, 400)
+        self.assertIn("Invalid Admin Security Passcode", res_invalid.get_json()["message"])
+
+        # 3. Valid passcode -> correctly grants admin role
+        res_admin = test_client.post('/register', json={
+            "full_name": "New Compliance Admin",
+            "email": email_admin,
+            "password": "securepassword123",
+            "admin_code": Config.ADMIN_INVITE_CODE
+        })
+        self.assertEqual(res_admin.status_code, 200)
+        self.assertEqual(res_admin.get_json()["user"]["role"], "admin")
+
+    def test_17_profile_update_and_password_change(self):
+        """Verify user profile editing and password updates."""
+        client = self.app.test_client()
+        profile_email = f"profile_{uuid.uuid4().hex[:6]}@example.com"
+        # Register a test user
+        client.post('/register', json={
+            "full_name": "Profile Tester",
+            "email": profile_email,
+            "password": "initialpassword123"
+        })
+
+        # 1. View /profile
+        res_profile = client.get('/profile')
+        self.assertEqual(res_profile.status_code, 200)
+        self.assertIn("Account & Security Settings", res_profile.get_data(as_text=True))
+
+        # 2. Update profile name & avatar color
+        res_update = client.post('/api/user/profile', json={
+            "full_name": "Profile Tester Updated",
+            "avatar_color": "#8b5cf6"
+        })
+        self.assertEqual(res_update.status_code, 200)
+        self.assertTrue(res_update.get_json()["success"])
+
+        # 3. Password update failure with incorrect current password
+        res_pw_fail = client.post('/api/user/password', json={
+            "current_password": "wrongpassword",
+            "new_password": "brandnewpassword123"
+        })
+        self.assertEqual(res_pw_fail.status_code, 400)
+
+        # 4. Password update success
+        res_pw_ok = client.post('/api/user/password', json={
+            "current_password": "initialpassword123",
+            "new_password": "brandnewpassword123"
+        })
+        self.assertEqual(res_pw_ok.status_code, 200)
+        self.assertTrue(res_pw_ok.get_json()["success"])
+
+    def test_18_user_account_deletion_and_master_admin_lock(self):
+        """Verify user account self-deletion, admin user deletion, and Master Admin protection lock."""
+        # 1. Master Admin (ID 1) CANNOT be deleted
+        admin_client = self.app.test_client()
+        with admin_client.session_transaction() as sess:
+            sess['user_id'] = 1
+            sess['user_email'] = 'admin@docusphere.ai'
+            sess['user_role'] = 'admin'
+        res_lock = admin_client.post('/api/user/delete', json={"password": "adminpassword123"})
+        self.assertEqual(res_lock.status_code, 403)
+        self.assertIn("protected", res_lock.get_json()["message"])
+
+        # 2. Regular user self-deletion
+        user_client = self.app.test_client()
+        del_email = f"delete_{uuid.uuid4().hex[:6]}@example.com"
+        user_client.post('/register', json={
+            "full_name": "Delete Me User",
+            "email": del_email,
+            "password": "password123"
+        })
+        # Self-delete with correct password
+        res_del = user_client.post('/api/user/delete', json={"password": "password123"})
+        self.assertEqual(res_del.status_code, 200)
+        self.assertTrue(res_del.get_json()["success"])
+
+        # Verify user is gone
+        self.assertIsNone(UserRepository.get_by_email(del_email))
+
+        # 3. Admin deleting another user via /api/users/<id>
+        other_client = self.app.test_client()
+        target_email = f"target_{uuid.uuid4().hex[:6]}@example.com"
+        created = other_client.post('/register', json={
+            "full_name": "Admin Target",
+            "email": target_email,
+            "password": "password123"
+        })
+        target_uid = created.get_json()["user"]["id"]
+
+        res_admin_del = admin_client.delete(f'/api/users/{target_uid}')
+        self.assertEqual(res_admin_del.status_code, 200)
+        self.assertTrue(res_admin_del.get_json()["success"])
+        self.assertIsNone(UserRepository.get_by_id(target_uid))
 
 
 if __name__ == '__main__':

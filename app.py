@@ -5,6 +5,7 @@ from db.database import init_db
 from api.routes_frontend import frontend_bp
 from api.routes_documents import documents_bp
 from api.routes_chat import chat_bp
+from api.routes_auth import auth_bp
 
 # Configure logger
 logging.basicConfig(
@@ -29,9 +30,20 @@ def create_app():
         raise e
 
     # Register Blueprints
+    app.register_blueprint(auth_bp)
     app.register_blueprint(frontend_bp)
     app.register_blueprint(documents_bp)
     app.register_blueprint(chat_bp)
+
+    # Context processor to provide authenticated user to all Jinja templates
+    @app.context_processor
+    def inject_user():
+        from core.security import get_current_user
+        from flask import session
+        return {
+            'current_user': get_current_user(),
+            'user_role': session.get('user_role', 'guest')
+        }
 
     # Global Error Handlers
     @app.errorhandler(404)

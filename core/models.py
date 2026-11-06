@@ -107,3 +107,42 @@ def is_information_unavailable(text: str) -> bool:
 
     return False
 
+
+def clean_latex_math(content: str) -> str:
+    """
+    Cleans raw LaTeX math notation (e.g. $$6 \\text{ days} - 2 = \\mathbf{4}$$ or $...$)
+    into clean, natural, readable plain text / Markdown.
+    Prevents unparsed LaTeX code from rendering as visual glitches or syntax errors in the chat UI.
+    """
+    if not content:
+        return content
+
+    import re
+
+    def replace_math(expr: str) -> str:
+        simplified = expr
+        # Run multiple passes to clean nested \\mathbf{\\text{...}}
+        for _ in range(3):
+            simplified = re.sub(r'\\text\{([^{}]+)\}', r'\1', simplified)
+            simplified = re.sub(r'\\mathbf\{([^{}]+)\}', r'\1', simplified)
+            simplified = re.sub(r'\\textbf\{([^{}]+)\}', r'\1', simplified)
+        simplified = re.sub(r'\\times', '×', simplified)
+        simplified = re.sub(r'\\div', '÷', simplified)
+        simplified = re.sub(r'\\pm', '±', simplified)
+        simplified = re.sub(r'\\le', '≤', simplified)
+        simplified = re.sub(r'\\ge', '≥', simplified)
+        simplified = re.sub(r'\\neq', '≠', simplified)
+        simplified = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'(\1 / \2)', simplified)
+        simplified = re.sub(r'\s+', ' ', simplified).strip()
+        return f"**{simplified}**"
+
+    # Replace block $$ ... $$
+    cleaned = re.sub(r'\$\$(.*?)\$\$', lambda m: replace_math(m.group(1)), content, flags=re.DOTALL)
+    # Replace inline $ ... $ (ignoring currency like $100)
+    cleaned = re.sub(
+        r'(?<!\\)\$([^\$\n]+?)(?<!\\)\$',
+        lambda m: replace_math(m.group(1)) if any(sym in m.group(1) for sym in ['\\', '=', '+', '-', '×', '÷', '/']) else m.group(0),
+        cleaned
+    )
+    return cleaned
+

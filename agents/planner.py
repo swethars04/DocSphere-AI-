@@ -64,7 +64,7 @@ Do NOT output markdown blocks or extra commentary.
                     {"role": "user", "content": user_content}
                 ],
                 temperature=0.1,
-                max_tokens=600,
+                max_tokens=400,
                 response_format={"type": "json_object"}
             )
             result = json.loads(response.choices[0].message.content)
@@ -74,8 +74,49 @@ Do NOT output markdown blocks or extra commentary.
             return result
 
         except Exception as e:
-            logger.error(f"Planner Agent encountered error: {e}. Falling back to original query.")
-            return {
-                "sub_queries": [question],
-                "reasoning": f"Fallback to raw question due to planner exception: {e}"
-            }
+            logger.warning(f"Planner Agent primary model failed: {e}. Trying fallback...")
+            try:
+                response = self.client.chat.completions.create(
+                    model=getattr(Config, 'FALLBACK_CHAT_MODEL', 'openai/gpt-oss-20b'),
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_content}
+                    ],
+                    temperature=0.1,
+                    max_tokens=400,
+                    response_format={"type": "json_object"}
+                )
+                result = json.loads(response.choices[0].message.content)
+                if not result.get("sub_queries"):
+                    result["sub_queries"] = [question]
+                return result
+            except Exception as fb_err:
+                logger.error(f"Planner fallback also failed: {fb_err}. Falling back to expanded query.")
+                fallback_queries = self._expand_and_normalize_query(question)
+                return {
+                    "sub_queries": fallback_queries,
+                    "reasoning": f"Smart domain expansion fallback: {fallback_queries}"
+                }
+
+    @staticmethod
+    def _expand_and_normalize_query(question: str) -> List[str]:
+        """Normalizes and expands queries with domain synonyms if LLM planning is unavailable."""
+        import re
+        clean_q = re.sub(r'^(give|tell|show|what is|what are|explain|can you|find|please)\s+(me\s+)?(the\s+)?', '', question.strip(), flags=re.IGNORECASE)
+        clean_q = re.sub(r'\s+(from\s+the\s+pdf|in\s+the\s+pdf|from\s+document|in\s+document|from\s+pdf)\s*$', '', clean_q, flags=re.IGNORECASE).strip()
+        
+        q_lower = clean_q.lower()
+        sub_queries = [clean_q] if clean_q else [question]
+
+        # Domain expansions for competitive exams, study materials, and compliance
+        if re.search(r'\b(math|maths|mathematics|arithmetic)\b', q_lower):
+            sub_queries.append("Aptitude and Mental Ability mathematics")
+            sub_queries.append("Simplification HCF LCM percentage ratio interest")
+        elif re.search(r'\b(reasoning|mental ability|aptitude)\b', q_lower):
+            sub_queries.append("Aptitude and Mental Ability reasoning puzzles number series")
+        elif re.search(r'\b(english|grammar)\b', q_lower):
+            sub_queries.append("General English grammar vocabulary writing skills")
+        elif re.search(r'\b(tamil)\b', q_lower):
+            sub_queries.append("பொதுத்தமிழ் தமிழ் இலக்கியம்")
+
+        return list(dict.fromkeys(sub_queries))[:3]

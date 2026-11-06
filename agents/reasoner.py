@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict, Any, Optional
 from config import Config
-from core.models import RetrievalResult
+from core.models import RetrievalResult, clean_latex_math
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,7 @@ STRICT INSTRUCTIONS:
 5. Format your response cleanly using GitHub-flavored markdown: bold key metrics, use bullet points, and render tabular data where helpful.
 6. If a Verification Critique is provided, you MUST correct the exact inaccuracies, hallucinations, or missing citations pointed out in the critique.
 7. Completeness: Ensure all requested topics, numbered sections, and bullet points are comprehensively and fully written out. Never cut off abruptly or leave unfinished sentences or blank bullet points.
+8. Mathematical Calculations & Formatting: When presenting calculations, formulas, or arithmetic (e.g. leave balances, differences, sums, percentages), write them in plain, clear, readable text or standard Markdown (e.g., '6 days (Total) - 2 days (Taken) = 4 days remaining'). NEVER output raw LaTeX syntax (do NOT use $$, \\text{...}, \\mathbf{...}, \\frac{...}, or LaTeX math delimiters).
 """
 
         user_content = f"Question: {question}\n\n"
@@ -66,8 +67,9 @@ STRICT INSTRUCTIONS:
 
         for attempt in range(2):
             try:
+                target_model = self.model if attempt == 0 else getattr(Config, 'FALLBACK_CHAT_MODEL', 'openai/gpt-oss-20b')
                 response = self.client.chat.completions.create(
-                    model=self.model,
+                    model=target_model,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_content}
@@ -80,10 +82,10 @@ STRICT INSTRUCTIONS:
 
                 # If the generation stopped due to token limit length, request seamless continuation
                 if choice.finish_reason == "length":
-                    logger.warning("Reasoning Agent response hit token length limit. Requesting seamless continuation to complete all sections...")
+                    logger.warning("Reasoning Agent response hit token length limit. Requesting seamless continuation...")
                     try:
                         continuation_response = self.client.chat.completions.create(
-                            model=self.model,
+                            model=target_model,
                             messages=[
                                 {"role": "system", "content": system_prompt},
                                 {"role": "user", "content": user_content},
@@ -98,21 +100,17 @@ STRICT INSTRUCTIONS:
                     except Exception as cont_err:
                         logger.warning(f"Continuation request failed: {cont_err}")
 
+                draft = clean_latex_math(draft)
                 logger.info("Reasoning Agent completed full draft generation.")
                 return draft
 
             except Exception as e:
                 err_str = str(e)
-                if "429" in err_str and attempt == 0:
-                    logger.warning("Groq rate limit encountered in ReasoningAgent. Waiting 6 seconds before retry...")
-                    time.sleep(6)
+                logger.warning(f"Reasoning Agent attempt {attempt} failed: {e}")
+                if attempt == 0:
+                    if "429" in err_str:
+                        logger.warning("Groq rate limit encountered. Waiting 3s before retrying with fallback model...")
+                        time.sleep(3)
                     continue
-                logger.error(f"Reasoning Agent error: {e}")
-                if retrieved_results:
-                    # Provide an immediate grounded summary rather than failing the request
-                    top_text = "\n\n".join([r.chunk.text for r in retrieved_results[:2]])
-                    return (
-                        f"Based on the relevant excerpts from your documents:\n\n{top_text[:800]}...\n\n"
-                        f"*(Information extracted directly from verified document records.)*"
-                    )
+                logger.error(f"Reasoning Agent final error: {e}")
                 raise RuntimeError(f"Reasoning Agent failed: {str(e)}")

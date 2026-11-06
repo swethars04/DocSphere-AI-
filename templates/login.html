@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — DocSphere AI Enterprise</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Platform Theme CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 50% 10%, rgba(16, 185, 129, 0.08) 0%, rgba(9, 13, 22, 1) 70%);
+            padding: 2rem 1rem;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        /* Ambient Glow Circles */
+        .ambient-glow-1 {
+            position: absolute;
+            top: 15%;
+            left: 20%;
+            width: 380px;
+            height: 380px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            filter: blur(50px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ambient-glow-2 {
+            position: absolute;
+            bottom: 15%;
+            right: 20%;
+            width: 420px;
+            height: 420px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .auth-card {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 480px;
+            background: rgba(18, 27, 45, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2.25rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.1);
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 1.75rem;
+        }
+
+        .auth-logo-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--primary);
+            font-size: 1.75rem;
+            margin-bottom: 0.85rem;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.2);
+        }
+
+        .auth-title {
+            font-family: var(--font-heading);
+            font-size: 1.65rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Tabs */
+        .auth-tabs {
+            display: flex;
+            background: rgba(10, 16, 29, 0.7);
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .auth-tab-btn {
+            flex: 1;
+            padding: 0.6rem 0;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .auth-tab-btn.active {
+            background: var(--primary);
+            color: #042f22;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 1.15rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            pointer-events: none;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(10, 16, 29, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 0.75rem 1rem 0.75rem 2.6rem;
+            color: #ffffff;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+            background: rgba(10, 16, 29, 0.95);
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 0.9rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0.25rem;
+        }
+
+        .password-toggle-btn:hover {
+            color: #ffffff;
+        }
+
+        .role-radio-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 0.35rem;
+        }
+
+        .role-radio-card {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10, 16, 29, 0.5);
+            border-radius: 10px;
+            padding: 0.65rem 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .role-radio-card input {
+            accent-color: var(--primary);
+        }
+
+        .role-radio-card:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.85rem;
+            font-family: var(--font-heading);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Error banner */
+        .auth-error-banner {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .auth-footer {
+            margin-top: 1.75rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-glow-1"></div>
+    <div class="ambient-glow-2"></div>
+
+    <div class="auth-card">
+        
+        <!-- Logo and Platform Header -->
+        <div class="auth-header">
+            <div class="auth-logo-badge">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <h1 class="auth-title">DocSphere AI</h1>
+            <p class="auth-subtitle">Enterprise Document Intelligence & Audit Workspace</p>
+        </div>
+
+        <!-- Tab Selector: Sign In vs Create Account -->
+        <div class="auth-tabs">
+            <button class="auth-tab-btn {% if active_tab != 'register' %}active{% endif %}" id="tab-login-btn" onclick="switchAuthTab('login')">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+            <button class="auth-tab-btn {% if active_tab == 'register' %}active{% endif %}" id="tab-register-btn" onclick="switchAuthTab('register')">
+                <i class="fas fa-user-plus"></i> Create Account
+            </button>
+        </div>
+
+        <!-- Error Feedback Banner -->
+        {% if error_msg %}
+        <div class="auth-error-banner" id="auth-error-banner">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>{{ error_msg }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Form 1: Sign In -->
+        <form id="form-login" action="{{ url_for('auth.login') }}" method="POST" style="{% if active_tab == 'register' %}display: none;{% endif %}">
+            <input type="hidden" name="next" value="{{ next_url or '/' }}">
+            
+            <div class="form-group">
+                <label class="form-label" for="login-email">Work Email</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input type="email" id="login-email" name="email" class="form-control" placeholder="name@organization.com" required autocomplete="username">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="login-password">Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="login-password" name="password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-sign-in-alt"></i> Sign In to Workspace
+            </button>
+        </form>
+
+        <!-- Form 2: Create Account -->
+        <form id="form-register" action="{{ url_for('auth.register') }}" method="POST" style="{% if active_tab != 'register' %}display: none;{% endif %}">
+            <input type="hidden" name="next" value="{{ next_url or '/' }}">
+
+            <div class="form-group">
+                <label class="form-label" for="reg-name">Full Name</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" id="reg-name" name="full_name" class="form-control" placeholder="Jane Doe" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-email">Work Email</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input type="email" id="reg-email" name="email" class="form-control" placeholder="name@organization.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-password">Password (Min. 6 chars)</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="reg-password" name="password" class="form-control" placeholder="Create a secure password" minlength="6" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-password', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-admin-code">
+                    Admin Passcode <span style="font-weight: 400; color: var(--text-muted); font-size: 0.75rem;">(Optional)</span>
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-key input-icon"></i>
+                    <input type="password" id="reg-admin-code" name="admin_code" class="form-control" placeholder="Leave blank for Analyst access" autocomplete="off">
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-admin-code', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div style="font-size: 0.73rem; color: var(--text-muted); margin-top: 0.4rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <i class="fas fa-shield-alt" style="color: var(--primary);"></i>
+                    <span>Default accounts are Financial Analysts. Enter key for Admin rights.</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-user-plus"></i> Create Account
+            </button>
+        </form>
+
+        <!-- Security Badge Footer -->
+        <div class="auth-footer">
+            <i class="fas fa-shield-halved" style="color: var(--primary);"></i>
+            <span>Encrypted Session • Role-Based Access Control (RBAC)</span>
+        </div>
+
+    </div>
+
+    <script>
+        function switchAuthTab(tab) {
+            const loginBtn = document.getElementById('tab-login-btn');
+            const registerBtn = document.getElementById('tab-register-btn');
+            const loginForm = document.getElementById('form-login');
+            const registerForm = document.getElementById('form-register');
+            const errorBanner = document.getElementById('auth-error-banner');
+
+            if (errorBanner) {
+                errorBanner.style.display = 'none';
+            }
+
+            if (tab === 'login') {
+                loginBtn.classList.add('active');
+                registerBtn.classList.remove('active');
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            } else {
+                registerBtn.classList.add('active');
+                loginBtn.classList.remove('active');
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            }
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>
+

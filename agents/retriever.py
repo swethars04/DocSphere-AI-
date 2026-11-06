@@ -18,9 +18,10 @@ class RetrievalAgent:
         self,
         sub_queries: List[str],
         company_names: Optional[List[str]] = None,
-        top_k: int = 6
+        top_k: int = 6,
+        allowed_doc_ids: Optional[set] = None
     ) -> List[RetrievalResult]:
-        logger.info(f"Retrieval Agent searching for {len(sub_queries)} sub-queries with companies: {company_names}")
+        logger.info(f"Retrieval Agent searching for {len(sub_queries)} sub-queries with companies: {company_names} (allowed_docs: {len(allowed_doc_ids) if allowed_doc_ids is not None else 'ALL'})")
 
         merged_results: Dict[str, RetrievalResult] = {}
 
@@ -28,7 +29,8 @@ class RetrievalAgent:
             results = self.retriever.retrieve(
                 query=query,
                 top_k=top_k,
-                company_names=company_names
+                company_names=company_names,
+                allowed_doc_ids=allowed_doc_ids
             )
             for res in results:
                 cid = res.chunk.chunk_id

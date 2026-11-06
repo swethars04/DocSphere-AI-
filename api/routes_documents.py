@@ -1,12 +1,13 @@
 import os
 import uuid
 import logging
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, session
 from werkzeug.utils import secure_filename
 from config import Config
 from db.repositories import CompanyRepository, DocumentRepository
 from core.factory import DocumentParserFactory
 from indexing.hybrid_retriever import HybridRetriever
+from core.security import login_required, admin_required
 
 logger = logging.getLogger(__name__)
 documents_bp = Blueprint('documents', __name__, url_prefix='/api')
@@ -18,12 +19,14 @@ def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
 @documents_bp.route('/companies', methods=['GET'])
+@login_required
 def get_companies():
     """Returns all registered companies with their document counts."""
     companies = CompanyRepository.get_all()
     return jsonify({"success": True, "companies": companies})
 
 @documents_bp.route('/companies', methods=['POST'])
+@login_required
 def create_company():
     """Manually registers an organization/company."""
     data = request.get_json() or {}
@@ -40,13 +43,16 @@ def create_company():
     return jsonify({"success": True, "company": company})
 
 @documents_bp.route('/documents', methods=['GET'])
+@login_required
 def get_documents():
-    """Lists documents, optionally filtered by company_id."""
+    """Lists documents, optionally filtered by company_id and scoped to current user."""
     company_id = request.args.get('company_id', type=int)
-    docs = DocumentRepository.get_all(company_id=company_id)
+    user_id = session.get('user_id')
+    docs = DocumentRepository.get_all(company_id=company_id, user_id=user_id)
     return jsonify({"success": True, "documents": docs})
 
 @documents_bp.route('/documents/upload', methods=['POST'])
+@login_required
 def upload_documents():
     """
     Handles batch upload of multi-format documents (PDF, DOCX, TXT, HTML, XBRL).
@@ -92,6 +98,7 @@ def upload_documents():
             )
 
             # 3. Register document in database
+            user_id = session.get('user_id') or 1
             doc_id = DocumentRepository.add_document(
                 company_id=company_id,
                 filename=unique_name,
@@ -101,7 +108,8 @@ def upload_documents():
                 file_size_bytes=file_size,
                 total_pages_or_sections=extraction.total_pages_or_sections,
                 chunk_count=len(chunks),
-                status="indexed"
+                status="indexed",
+                user_id=user_id
             )
 
             # Stamp document_id and clean original document name on chunks
@@ -132,6 +140,7 @@ def upload_documents():
     })
 
 @documents_bp.route('/documents/<int:doc_id>/download', methods=['GET'])
+@login_required
 def download_document(doc_id: int):
     """Streams and downloads the original document file."""
     doc = DocumentRepository.get_by_id(doc_id)
@@ -153,8 +162,9 @@ def download_document(doc_id: int):
     )
 
 @documents_bp.route('/documents/<int:doc_id>/rename', methods=['POST'])
+@admin_required
 def rename_document(doc_id: int):
-    """Renames an uploaded document's display name."""
+    """Renames an uploaded document's display name (Admin Only)."""
     data = request.get_json() or {}
     new_name = data.get('new_name', '').strip()
     if not new_name:
@@ -180,8 +190,9 @@ def rename_document(doc_id: int):
 
 @documents_bp.route('/documents/<int:doc_id>', methods=['DELETE', 'POST'])
 @documents_bp.route('/documents/<int:doc_id>/delete', methods=['DELETE', 'POST'])
+@admin_required
 def delete_document(doc_id: int):
-    """Deletes document record, purges search indices, and removes physical file from disk."""
+    """Deletes document record, purges search indices, and removes physical file from disk (Admin Only)."""
     doc = DocumentRepository.get_by_id(doc_id)
     if not doc:
         # Idempotent deletion: document is already removed from database

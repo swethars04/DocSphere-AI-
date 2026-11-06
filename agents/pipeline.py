@@ -8,7 +8,7 @@ from agents.retriever import RetrievalAgent
 from agents.reasoner import ReasoningAgent
 from agents.verifier import VerificationAgent
 
-from core.models import is_information_unavailable
+from core.models import is_information_unavailable, clean_latex_math
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,8 @@ class AgenticRAGPipeline:
 
         self.client = OpenAI(
             api_key=self.api_key,
-            base_url=Config.GROQ_API_BASE
+            base_url=Config.GROQ_API_BASE,
+            max_retries=2
         )
 
         self.hybrid_retriever = hybrid_retriever or HybridRetriever()
@@ -36,18 +37,20 @@ class AgenticRAGPipeline:
         self.retriever = RetrievalAgent(self.hybrid_retriever)
         self.reasoner = ReasoningAgent(self.client)
         self.verifier = VerificationAgent(self.client)
-        self.max_attempts = Config.MAX_VERIFICATION_ATTEMPTS
+        # Cap self-correction cycles to 2 to prevent cascading rate-limit loops
+        self.max_attempts = min(int(getattr(Config, 'MAX_VERIFICATION_ATTEMPTS', 2)), 2)
 
     def answer_query(
         self,
         question: str,
         chat_history: Optional[List[Dict[str, Any]]] = None,
-        company_names: Optional[List[str]] = None
+        company_names: Optional[List[str]] = None,
+        user_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """
-        Executes end-to-end multi-agent self-correcting RAG query.
+        Executes end-to-end multi-agent self-correcting RAG query scoped to the user's documents.
         """
-        logger.info(f"Agentic RAG Pipeline executing for: '{question}' [Filter: {company_names}]")
+        logger.info(f"Agentic RAG Pipeline executing for: '{question}' [Filter: {company_names}, User: {user_id}]")
 
         # 1. PLANNER AGENT: Decompose query into sub-queries
         try:
@@ -59,21 +62,25 @@ class AgenticRAGPipeline:
             sub_queries = [question]
             plan_reasoning = "Planning fallback."
 
-        # 2. RETRIEVAL AGENT: Hybrid Vector + BM25 search & deduplication
-        retrieved_results = self.retriever.retrieve_and_deduplicate(
-            sub_queries=sub_queries,
-            company_names=company_names,
-            top_k=Config.TOP_K_RETRIEVAL
-        )
-
+        # Fetch active documents scoped to this user
         from db.repositories import DocumentRepository
         try:
-            active_docs = DocumentRepository.get_all()
+            active_docs = DocumentRepository.get_all(user_id=user_id)
             if company_names:
                 active_docs = [d for d in active_docs if d.get('company_name') in company_names]
         except Exception as e:
             logger.warning(f"Could not load active documents for pipeline catalog: {e}")
             active_docs = []
+
+        allowed_doc_ids = {d['id'] for d in active_docs} if user_id is not None else None
+
+        # 2. RETRIEVAL AGENT: Hybrid Vector + BM25 search & deduplication (strictly user-scoped)
+        retrieved_results = self.retriever.retrieve_and_deduplicate(
+            sub_queries=sub_queries,
+            company_names=company_names,
+            top_k=Config.TOP_K_RETRIEVAL,
+            allowed_doc_ids=allowed_doc_ids
+        )
 
         catalog_lines = [
             f"- Document: {d['original_name']} | Organization: {d.get('company_name', 'General')} | Format: {d.get('file_type', '').upper()} | Total Chunks: {d.get('chunk_count', 0)}"
@@ -193,6 +200,8 @@ class AgenticRAGPipeline:
                         "page_or_section": r.chunk.page_or_section,
                         "excerpt": r.chunk.text[:120] + "..."
                     })
+
+        final_answer = clean_latex_math(final_answer)
 
         return {
             "answer": final_answer,

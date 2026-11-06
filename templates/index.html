@@ -189,9 +189,11 @@
             <a href="/chat" class="nav-tab-link">
                 <i class="fas fa-comments"></i> RAG Chatbot
             </a>
+            {% if current_user and current_user.role == 'admin' %}
             <a href="/database" class="nav-tab-link">
                 <i class="fas fa-database"></i> Database
             </a>
+            {% endif %}
         </div>
 
         <div class="header-actions">
@@ -201,6 +203,24 @@
             <a href="/chat" class="btn btn-primary">
                 <i class="fas fa-comments"></i> Launch Chat
             </a>
+
+            {% if current_user %}
+            <!-- User Profile & Logout -->
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <a href="/profile" class="user-profile-badge" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.06); padding: 0.3rem 0.65rem 0.3rem 0.35rem; border-radius: 9999px; border: 1px solid var(--border); text-decoration: none; transition: all 0.2s;" title="View Profile & Settings">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; background: {{ current_user.avatar_color or '#10b981' }}; color: #042f22; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700;">
+                        {{ current_user.full_name[:2].upper() }}
+                    </div>
+                    <div style="display: flex; flex-direction: column; text-align: left; line-height: 1.1;">
+                        <span style="font-size: 0.78rem; font-weight: 600; color: #ffffff;">{{ current_user.full_name.split()[0] }}</span>
+                        <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: {% if current_user.role == 'admin' %}#34d399{% else %}#38bdf8{% endif %};">{{ current_user.role }}</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('auth.logout') }}" style="color: var(--text-muted); font-size: 0.82rem; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); transition: all 0.2s;" title="Sign Out">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+            {% endif %}
         </div>
     </header>
 
@@ -238,6 +258,22 @@
                 </div>
             </div>
         </div>
+
+        {% if current_user and current_user.role == 'admin' %}
+        <!-- Admin Quick Access Bar -->
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fas fa-shield-alt" style="color: #34d399; font-size: 1.3rem;"></i>
+                <div>
+                    <div style="font-weight: 600; font-size: 0.9rem; color: #ecfdf5;">Compliance Administrator Active</div>
+                    <div style="font-size: 0.8rem; color: #94a3b8;">You have full system privileges to upload compliance docs, delete records, and manage user accounts.</div>
+                </div>
+            </div>
+            <a href="/database" class="btn btn-secondary btn-sm" style="font-size: 0.82rem; padding: 0.4rem 0.85rem; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                <i class="fas fa-users-cog text-emerald-400"></i> Manage Users & Database &rarr;
+            </a>
+        </div>
+        {% endif %}
 
         <!-- Upload & Ingestion Section -->
         <div class="upload-section">

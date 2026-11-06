@@ -110,14 +110,14 @@ class HybridRetriever:
         logger.info(f"Updated document {doc_id} name to '{new_name}' in hybrid retrieval stores.")
 
     def retrieve(
-
         self,
         query: str,
         top_k: Optional[int] = None,
-        company_names: Optional[List[str]] = None
+        company_names: Optional[List[str]] = None,
+        allowed_doc_ids: Optional[set] = None
     ) -> List[RetrievalResult]:
         """
-        Retrieves top_k chunks for query, filtered by company_names.
+        Retrieves top_k chunks for query, filtered by company_names and allowed_doc_ids.
         Uses Reciprocal Rank Fusion (RRF) to merge dense and sparse rankings.
         """
         k = top_k or Config.TOP_K_RETRIEVAL
@@ -173,8 +173,11 @@ class HybridRetriever:
         final_results: List[RetrievalResult] = []
         for cid in sorted_cids:
             chunk = chunk_map[cid]
+            doc_id = getattr(chunk, 'document_id', None)
+            if allowed_doc_ids is not None and doc_id not in allowed_doc_ids:
+                # Enforce multi-tenant user document privacy isolation
+                continue
             if valid_doc_map is not None:
-                doc_id = getattr(chunk, 'document_id', None)
                 if doc_id not in valid_doc_map:
                     # Skip orphan chunks belonging to deleted or untracked documents
                     continue

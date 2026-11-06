@@ -13,6 +13,7 @@ class Config:
     
     # Flask settings
     SECRET_KEY = os.getenv("SECRET_KEY", "docusphere_super_secret_jwt_and_session_key_2026")
+    ADMIN_INVITE_CODE = os.getenv("ADMIN_INVITE_CODE", "DOCSPHERE_ADMIN_2026")
     FLASK_ENV = os.getenv("FLASK_ENV", "development")
     PORT = int(os.getenv("PORT", 5000))
     DEBUG = FLASK_ENV == "development"
@@ -40,7 +41,13 @@ class Config:
     # LLM Settings (Groq / OpenAI compatible)
     GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
     GROQ_API_BASE = os.getenv("GROQ_API_BASE", "https://api.groq.com/openai/v1")
-    GROQ_CHAT_MODEL = os.getenv("GROQ_CHAT_MODEL", "qwen/qwen3.8-27b")
+    _configured_model = os.getenv("GROQ_CHAT_MODEL", "qwen/qwen3.8-27b")
+    # Guard against non-existent or deprecated models (e.g. llama-3.1-8b-instant or 3.3-70b)
+    if not _configured_model or "llama" in _configured_model.lower() or "3.3-70b" in _configured_model.lower():
+        GROQ_CHAT_MODEL = "qwen/qwen3.8-27b"
+    else:
+        GROQ_CHAT_MODEL = _configured_model
+    FALLBACK_CHAT_MODEL = "openai/gpt-oss-20b"
     
     # Local Dense Embeddings (SentenceTransformers)
     EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")

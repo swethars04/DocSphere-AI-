@@ -448,6 +448,39 @@ async function loadMessages(sessionId) {
     }
 }
 
+function cleanLatexInMarkdown(rawText) {
+    if (!rawText) return '';
+    let text = rawText;
+    text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, expr) => {
+        let simplified = expr;
+        for (let i = 0; i < 3; i++) {
+            simplified = simplified.replace(/\\text\{([^{}]+)\}/g, '$1');
+            simplified = simplified.replace(/\\mathbf\{([^{}]+)\}/g, '$1');
+            simplified = simplified.replace(/\\textbf\{([^{}]+)\}/g, '$1');
+        }
+        simplified = simplified.replace(/\\times/g, '×').replace(/\\div/g, '÷').replace(/\\pm/g, '±')
+                               .replace(/\\le/g, '≤').replace(/\\ge/g, '≥').replace(/\\neq/g, '≠')
+                               .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '($1 / $2)').replace(/\s+/g, ' ').trim();
+        return `**${simplified}**`;
+    });
+    text = text.replace(/(?<!\\)\$([^\$\n]+?)(?<!\\)\$/g, (match, expr) => {
+        if (/[\\=+\-×÷/]/.test(expr)) {
+            let simplified = expr;
+            for (let i = 0; i < 3; i++) {
+                simplified = simplified.replace(/\\text\{([^{}]+)\}/g, '$1');
+                simplified = simplified.replace(/\\mathbf\{([^{}]+)\}/g, '$1');
+                simplified = simplified.replace(/\\textbf\{([^{}]+)\}/g, '$1');
+            }
+            simplified = simplified.replace(/\\times/g, '×').replace(/\\div/g, '÷').replace(/\\pm/g, '±')
+                                   .replace(/\\le/g, '≤').replace(/\\ge/g, '≥').replace(/\\neq/g, '≠')
+                                   .replace(/\s+/g, ' ').trim();
+            return `**${simplified}**`;
+        }
+        return match;
+    });
+    return (typeof marked !== 'undefined') ? marked.parse(text) : text;
+}
+
 function appendMessageBubble(role, content, confidence = null, references = []) {
     const stream = document.getElementById('message-stream');
     if (!stream) return;
@@ -471,7 +504,7 @@ function appendMessageBubble(role, content, confidence = null, references = []) 
     
     if (role === 'assistant') {
         // Parse markdown content
-        bubble.innerHTML = marked.parse(content);
+        bubble.innerHTML = cleanLatexInMarkdown(content);
     } else {
         bubble.innerText = content;
     }

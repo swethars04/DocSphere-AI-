@@ -39,15 +39,16 @@ class VerificationAgent:
                 "citations": []
             }
 
-        # Build context evidence text
+        # Build compact context evidence text to preserve token quota
         evidence_blocks = []
         if doc_catalog_text:
-            evidence_blocks.append(f"[ACTIVE DOCUMENT REPOSITORY CATALOG]\n{doc_catalog_text}\n")
-        for idx, res in enumerate(retrieved_results, 1):
+            evidence_blocks.append(f"[ACTIVE DOCUMENT REPOSITORY CATALOG]\n{doc_catalog_text[:1200]}\n")
+        for idx, res in enumerate(retrieved_results[:4], 1):
             c = res.chunk
+            text_preview = c.text[:650] + ("..." if len(c.text) > 650 else "")
             evidence_blocks.append(
                 f"[Source #{idx}] (Doc: {c.document_name} | Company: {c.company_name} | Location: {c.page_or_section})\n"
-                f"{c.text}\n"
+                f"{text_preview}\n"
             )
         evidence_str = "\n---\n".join(evidence_blocks)
 
@@ -92,7 +93,7 @@ DRAFTED ANSWER TO AUDIT:
                     {"role": "user", "content": user_content}
                 ],
                 temperature=0.0,
-                max_tokens=1000,
+                max_tokens=800,
                 response_format={"type": "json_object"}
             )
             result = json.loads(response.choices[0].message.content)
@@ -106,6 +107,24 @@ DRAFTED ANSWER TO AUDIT:
             return result
 
         except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "rate_limit" in err_str.lower():
+                logger.warning("Verifier hit rate limit. Trying fallback model...")
+                try:
+                    fb_resp = self.client.chat.completions.create(
+                        model=getattr(Config, 'FALLBACK_CHAT_MODEL', 'openai/gpt-oss-20b'),
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_content}
+                        ],
+                        temperature=0.0,
+                        max_tokens=600,
+                        response_format={"type": "json_object"}
+                    )
+                    return json.loads(fb_resp.choices[0].message.content)
+                except Exception as fb_err:
+                    logger.warning(f"Fallback verifier failed: {fb_err}")
+
             logger.error(f"Verification Agent error: {e}. Defaulting to passing verdict.")
             if is_information_unavailable(draft):
                 return {

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile & Settings — DocSphere AI</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Platform Theme CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    
+    <style>
+        .profile-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 1.75rem;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .profile-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .profile-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .avatar-huge {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #042f22;
+            margin: 0 auto 1.25rem;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .color-palette-grid {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .color-swatch:hover, .color-swatch.active {
+            transform: scale(1.15);
+            border-color: #ffffff;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-mini-box {
+            background: rgba(10, 16, 29, 0.5);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .stat-mini-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-mini-val {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .danger-card {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+        }
+
+        .danger-title {
+            color: #f87171;
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-card {
+            background: #121b2d;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <a href="/" class="logo-container">
+            <div class="logo-icon"><i class="fas fa-layer-group"></i></div>
+            <h1 class="logo-text">DocSphere AI</h1>
+        </a>
+
+        <!-- Center Navigation Tabs -->
+        <div class="nav-tabs-wrapper">
+            <a href="/" class="nav-tab-link">
+                <i class="fas fa-cloud-upload-alt"></i> Upload & Ingest
+            </a>
+            <a href="/documents" class="nav-tab-link">
+                <i class="fas fa-folder-open"></i> Document Storage
+            </a>
+            <a href="/chat" class="nav-tab-link">
+                <i class="fas fa-comments"></i> RAG Chatbot
+            </a>
+            {% if current_user and current_user.role == 'admin' %}
+            <a href="/database" class="nav-tab-link">
+                <i class="fas fa-database"></i> Database
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="header-actions">
+            <button id="theme-toggle" class="btn btn-secondary btn-icon" title="Toggle Theme">
+                <i class="fas fa-sun"></i>
+            </button>
+            <a href="/chat" class="btn btn-primary btn-sm">
+                <i class="fas fa-comments"></i> Launch Chat
+            </a>
+
+            <!-- User Profile Badge -->
+            <a href="/profile" class="user-profile-badge active-profile" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(16,185,129,0.15); padding: 0.3rem 0.65rem 0.3rem 0.35rem; border-radius: 9999px; border: 1px solid var(--primary); text-decoration: none;" title="Your Profile & Settings">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: {{ current_user.avatar_color or '#10b981' }}; color: #042f22; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700;">
+                    {{ current_user.full_name[:2].upper() }}
+                </div>
+                <div style="display: flex; flex-direction: column; text-align: left; line-height: 1.1;">
+                    <span style="font-size: 0.78rem; font-weight: 600; color: #ffffff;">{{ current_user.full_name.split()[0] }}</span>
+                    <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: {% if current_user.role == 'admin' %}#34d399{% else %}#38bdf8{% endif %};">{{ current_user.role }}</span>
+                </div>
+                <span style="color: var(--text-muted); font-size: 0.82rem; margin-left: 0.35rem;"><i class="fas fa-cog"></i></span>
+            </a>
+
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-icon" style="padding: 0.4rem; height: 34px; width: 34px; border-radius: 50%;" title="Sign Out">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container" style="max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; width: 100%; flex: 1;">
+        
+        <!-- Breadcrumb & Header Title -->
+        <div style="margin-bottom: 1.75rem;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">
+                <a href="/" style="color: var(--text-secondary);"><i class="fas fa-home mr-1"></i> Dashboard</a> / <span>User Profile & Security</span>
+            </div>
+            <h1 style="font-size: 1.85rem; font-family: var(--font-heading); font-weight: 700;">
+                <i class="fas fa-id-badge text-emerald-400 mr-2"></i> Account & Security Settings
+            </h1>
+        </div>
+
+        <div class="profile-layout">
+            
+            <!-- Left Column: Identity & Footprint -->
+            <div>
+                <div class="profile-card" style="text-align: center;">
+                    <div id="avatar-preview" class="avatar-huge" style="background: {{ profile_user.avatar_color or '#10b981' }};">
+                        {{ profile_user.full_name[:2].upper() }}
+                    </div>
+
+                    <h2 id="display-name" style="font-size: 1.25rem; font-family: var(--font-heading); font-weight: 700; margin-bottom: 0.25rem;">
+                        {{ profile_user.full_name }}
+                    </h2>
+                    <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+                        {{ profile_user.email }}
+                    </p>
+
+                    <div>
+                        <span class="role-badge" style="padding: 0.3rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: {% if profile_user.role == 'admin' %}rgba(16, 185, 129, 0.15){% else %}rgba(56, 189, 248, 0.15){% endif %}; color: {% if profile_user.role == 'admin' %}#34d399{% else %}#38bdf8{% endif %}; border: 1px solid {% if profile_user.role == 'admin' %}rgba(16, 185, 129, 0.3){% else %}rgba(56, 189, 248, 0.3){% endif %};">
+                            <i class="fas {% if profile_user.role == 'admin' %}fa-shield-alt{% else %}fa-user-check{% endif %} mr-1"></i>
+                            {{ profile_user.role }} Account
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Audit Footprint Statistics -->
+                <div class="profile-card">
+                    <h3 style="font-size: 0.95rem; font-family: var(--font-heading); font-weight: 700; margin-bottom: 1rem; color: var(--text-secondary);">
+                        <i class="fas fa-chart-pie mr-1 text-emerald-400"></i> Audit Footprint
+                    </h3>
+
+                    <div class="stat-mini-box">
+                        <span class="stat-mini-label"><i class="fas fa-comments mr-1"></i> Chat Sessions</span>
+                        <span class="stat-mini-val">{{ stats.session_count }}</span>
+                    </div>
+
+                    <div class="stat-mini-box">
+                        <span class="stat-mini-label"><i class="fas fa-question-circle mr-1"></i> Queries Audited</span>
+                        <span class="stat-mini-val">{{ stats.query_count }}</span>
+                    </div>
+
+                    <div class="stat-mini-box">
+                        <span class="stat-mini-label"><i class="fas fa-calendar-alt mr-1"></i> Member Since</span>
+                        <span class="stat-mini-val">{{ profile_user.created_at.split(' ')[0] if profile_user.created_at else 'Recent' }}</span>
+                    </div>
+
+                    <div class="stat-mini-box">
+                        <span class="stat-mini-label"><i class="fas fa-clock mr-1"></i> Last Active</span>
+                        <span class="stat-mini-val">{{ profile_user.last_login.split(' ')[0] if profile_user.last_login else 'Today' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Settings & Danger Zone -->
+            <div>
+                
+                <!-- Card 1: Profile Information -->
+                <div class="profile-card">
+                    <h2 style="font-size: 1.15rem; font-family: var(--font-heading); font-weight: 700; margin-bottom: 0.35rem;">
+                        <i class="fas fa-user-edit text-emerald-400 mr-1"></i> Personal Information
+                    </h2>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                        Update your public display name and avatar theme color.
+                    </p>
+
+                    <form id="profile-info-form" onsubmit="handleSaveProfile(event)">
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.4rem; color: var(--text-secondary);">
+                                Full Name
+                            </label>
+                            <input type="text" id="input-full-name" value="{{ profile_user.full_name }}" required
+                                   style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface-solid); color: #ffffff; font-size: 0.9rem;">
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.4rem; color: var(--text-secondary);">
+                                Avatar Theme Accent
+                            </label>
+                            <input type="hidden" id="input-avatar-color" value="{{ profile_user.avatar_color or '#10b981' }}">
+                            <div class="color-palette-grid">
+                                <div class="color-swatch {% if profile_user.avatar_color == '#10b981' %}active{% endif %}" style="background: #10b981;" onclick="selectColor('#10b981', this)"></div>
+                                <div class="color-swatch {% if profile_user.avatar_color == '#06b6d4' %}active{% endif %}" style="background: #06b6d4;" onclick="selectColor('#06b6d4', this)"></div>
+                                <div class="color-swatch {% if profile_user.avatar_color == '#3b82f6' %}active{% endif %}" style="background: #3b82f6;" onclick="selectColor('#3b82f6', this)"></div>
+                                <div class="color-swatch {% if profile_user.avatar_color == '#8b5cf6' %}active{% endif %}" style="background: #8b5cf6;" onclick="selectColor('#8b5cf6', this)"></div>
+                                <div class="color-swatch {% if profile_user.avatar_color == '#ec4899' %}active{% endif %}" style="background: #ec4899;" onclick="selectColor('#ec4899', this)"></div>
+                                <div class="color-swatch {% if profile_user.avatar_color == '#f59e0b' %}active{% endif %}" style="background: #f59e0b;" onclick="selectColor('#f59e0b', this)"></div>
+                                <div class="color-swatch {% if profile_user.avatar_color == '#6366f1' %}active{% endif %}" style="background: #6366f1;" onclick="selectColor('#6366f1', this)"></div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="btn-save-profile">
+                            <i class="fas fa-check"></i> Save Profile
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Card 2: Security & Password Update -->
+                <div class="profile-card">
+                    <h2 style="font-size: 1.15rem; font-family: var(--font-heading); font-weight: 700; margin-bottom: 0.35rem;">
+                        <i class="fas fa-key text-amber-400 mr-1"></i> Change Password
+                    </h2>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                        Ensure your account is protected with a secure password (minimum 6 characters).
+                    </p>
+
+                    <form id="password-form" onsubmit="handleSavePassword(event)">
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.4rem; color: var(--text-secondary);">
+                                Current Password
+                            </label>
+                            <input type="password" id="input-curr-pw" required placeholder="Enter current password"
+                                   style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface-solid); color: #ffffff; font-size: 0.9rem;">
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div>
+                                <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.4rem; color: var(--text-secondary);">
+                                    New Password
+                                </label>
+                                <input type="password" id="input-new-pw" minlength="6" required placeholder="At least 6 chars"
+                                       style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface-solid); color: #ffffff; font-size: 0.9rem;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.4rem; color: var(--text-secondary);">
+                                    Confirm New Password
+                                </label>
+                                <input type="password" id="input-confirm-pw" minlength="6" required placeholder="Repeat new password"
+                                       style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface-solid); color: #ffffff; font-size: 0.9rem;">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-secondary" id="btn-save-pw">
+                            <i class="fas fa-lock"></i> Update Password
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Card 3: Danger Zone (Delete Account) -->
+                <div class="danger-card">
+                    <div class="danger-title">
+                        <i class="fas fa-exclamation-triangle"></i> Danger Zone
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                        Permanently delete your user profile and all personal chat sessions. Ground-truth organization documents and vector stores will not be touched.
+                    </p>
+
+                    {% if profile_user.id == 1 %}
+                    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.85rem 1rem; border-radius: var(--radius-sm); font-size: 0.82rem; color: #a7f3d0; display: flex; align-items: center; gap: 0.6rem;">
+                        <i class="fas fa-lock" style="font-size: 1rem; color: #34d399;"></i>
+                        <span>The primary <strong>Compliance Admin</strong> account (admin@docusphere.ai) is permanently protected and cannot be deleted to ensure system integrity.</span>
+                    </div>
+                    {% else %}
+                    <button type="button" class="btn" style="background: #dc2626; color: white; border: none; font-weight: 600;" onclick="openDeleteAccountModal()">
+                        <i class="fas fa-trash-alt"></i> Delete My Account
+                    </button>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Delete Account Confirmation Modal -->
+    <div id="delete-account-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div style="display: flex; align-items: center; gap: 0.6rem; color: #f87171; font-size: 1.25rem; font-family: var(--font-heading); font-weight: 700; margin-bottom: 0.75rem;">
+                <i class="fas fa-exclamation-triangle"></i> Delete Account Confirmation
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;">
+                This action is <strong>irreversible</strong>. Your profile, account credentials, and personal chat histories will be permanently wiped from the database.
+            </p>
+
+            <form onsubmit="handleConfirmDeleteAccount(event)">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.4rem; color: #ffffff;">
+                        Enter your password to confirm:
+                    </label>
+                    <input type="password" id="delete-confirm-password" required placeholder="Current password"
+                           style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(10, 16, 29, 0.9); color: #ffffff; font-size: 0.9rem;">
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeDeleteAccountModal()">Cancel</button>
+                    <button type="submit" class="btn" style="background: #dc2626; color: #ffffff; border: none; font-weight: 700;">
+                        Permanently Delete Account
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function selectColor(color, el) {
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('input-avatar-color').value = color;
+            document.getElementById('avatar-preview').style.background = color;
+        }
+
+        async function handleSaveProfile(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('input-full-name').value.trim();
+            const avatarColor = document.getElementById('input-avatar-color').value;
+            const btn = document.getElementById('btn-save-profile');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const res = await fetch('/api/user/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ full_name: fullName, avatar_color: avatarColor })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('display-name').textContent = fullName;
+                    document.getElementById('avatar-preview').textContent = fullName.slice(0, 2).toUpperCase();
+                    alert("Profile updated successfully!");
+                } else {
+                    alert(data.message || "Failed to update profile.");
+                }
+            } catch (err) {
+                alert("Network error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Save Profile';
+            }
+        }
+
+        async function handleSavePassword(e) {
+            e.preventDefault();
+            const currPw = document.getElementById('input-curr-pw').value;
+            const newPw = document.getElementById('input-new-pw').value;
+            const confirmPw = document.getElementById('input-confirm-pw').value;
+            const btn = document.getElementById('btn-save-pw');
+
+            if (newPw !== confirmPw) {
+                alert("New passwords do not match. Please verify.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+            try {
+                const res = await fetch('/api/user/password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ current_password: currPw, new_password: newPw })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("Password updated successfully!");
+                    document.getElementById('password-form').reset();
+                } else {
+                    alert(data.message || "Failed to update password.");
+                }
+            } catch (err) {
+                alert("Network error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-lock"></i> Update Password';
+            }
+        }
+
+        function openDeleteAccountModal() {
+            document.getElementById('delete-account-modal').style.display = 'flex';
+            document.getElementById('delete-confirm-password').value = '';
+            document.getElementById('delete-confirm-password').focus();
+        }
+
+        function closeDeleteAccountModal() {
+            document.getElementById('delete-account-modal').style.display = 'none';
+        }
+
+        async function handleConfirmDeleteAccount(e) {
+            e.preventDefault();
+            const password = document.getElementById('delete-confirm-password').value;
+
+            try {
+                const res = await fetch('/api/user/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("Your account has been deleted. Redirecting to login...");
+                    window.location.href = data.redirect || '/login';
+                } else {
+                    alert(data.message || "Failed to delete account.");
+                }
+            } catch (err) {
+                alert("Network error: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
+

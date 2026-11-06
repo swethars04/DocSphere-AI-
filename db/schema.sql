@@ -6,6 +6,18 @@
 
 PRAGMA foreign_keys = ON;
 
+-- 0. USERS (Authentication & Role-Based Access Control)
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,
+    full_name TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'analyst',     -- 'admin' or 'analyst'
+    avatar_color TEXT DEFAULT '#10b981',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP
+);
+
 -- 1. COMPANIES (Organizations)
 CREATE TABLE IF NOT EXISTS companies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,17 +40,21 @@ CREATE TABLE IF NOT EXISTS documents (
     total_pages_or_sections INTEGER DEFAULT 1,
     chunk_count INTEGER DEFAULT 0,
     status TEXT DEFAULT 'indexed',            -- 'pending', 'indexed', 'failed'
+    user_id INTEGER DEFAULT 1,                -- Owner user account
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE
+    FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
 );
 
 -- 3. CHAT SESSIONS (Multi-turn Sessions with Company-Level Filters)
 CREATE TABLE IF NOT EXISTS chat_sessions (
     session_id TEXT PRIMARY KEY,
+    user_id INTEGER DEFAULT 1,
     title TEXT NOT NULL,
     selected_company_ids TEXT DEFAULT '[]',   -- JSON array of company IDs filtered in this session
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 -- 4. CHAT MESSAGES (Grounded RAG Dialogue with Confidence & Audit Logs)

@@ -38,6 +38,10 @@ def _migrate_schema_columns(conn: sqlite3.Connection):
     cursor.execute("PRAGMA table_info(chat_sessions);")
     session_cols = {row['name'] for row in cursor.fetchall()}
     if session_cols:
+        if 'user_id' not in session_cols:
+            cursor.execute("ALTER TABLE chat_sessions ADD COLUMN user_id INTEGER DEFAULT 1;")
+            cursor.execute("UPDATE chat_sessions SET user_id = 1 WHERE user_id IS NULL;")
+            logger.info("Migrated chat_sessions: added user_id column.")
         if 'updated_at' not in session_cols:
             cursor.execute("ALTER TABLE chat_sessions ADD COLUMN updated_at TIMESTAMP;")
             cursor.execute("UPDATE chat_sessions SET updated_at = created_at WHERE updated_at IS NULL;")
@@ -60,6 +64,36 @@ def _migrate_schema_columns(conn: sqlite3.Connection):
             cursor.execute("ALTER TABLE chat_messages ADD COLUMN verification_attempts INTEGER DEFAULT 1;")
             logger.info("Migrated chat_messages: added verification_attempts column.")
 
+    # 3. documents columns migration
+    cursor.execute("PRAGMA table_info(documents);")
+    doc_cols = {row['name'] for row in cursor.fetchall()}
+    if doc_cols:
+        if 'user_id' not in doc_cols:
+            cursor.execute("ALTER TABLE documents ADD COLUMN user_id INTEGER DEFAULT 1;")
+            logger.info("Migrated documents: added user_id column.")
+
+def _seed_default_users(conn: sqlite3.Connection):
+    """Seeds default demo personas (Compliance Admin & Financial Analyst) if not present."""
+    from werkzeug.security import generate_password_hash
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE email = 'admin@docusphere.ai';")
+    if not cursor.fetchone():
+        admin_hash = generate_password_hash("adminpassword123")
+        cursor.execute(
+            "INSERT INTO users (email, password_hash, full_name, role, avatar_color) VALUES (?, ?, ?, ?, ?);",
+            ("admin@docusphere.ai", admin_hash, "Compliance Admin", "admin", "#10b981")
+        )
+        logger.info("Seeded default Compliance Admin user (admin@docusphere.ai).")
+
+    cursor.execute("SELECT id FROM users WHERE email = 'analyst@docusphere.ai';")
+    if not cursor.fetchone():
+        analyst_hash = generate_password_hash("analystpassword123")
+        cursor.execute(
+            "INSERT INTO users (email, password_hash, full_name, role, avatar_color) VALUES (?, ?, ?, ?, ?);",
+            ("analyst@docusphere.ai", analyst_hash, "Financial Analyst", "analyst", "#06b6d4")
+        )
+        logger.info("Seeded default Financial Analyst user (analyst@docusphere.ai).")
+
 def init_db():
     """Initializes database tables, runs column migrations, and creates indexes."""
     schema_path = os.path.join(Config.BASE_DIR, "db", "schema.sql")
@@ -72,6 +106,7 @@ def init_db():
     with get_db_connection() as conn:
         conn.executescript(schema_sql)
         _migrate_schema_columns(conn)
+        _seed_default_users(conn)
         logger.info(f"Initialized database schema successfully at: {Config.DB_PATH}")
 
 if __name__ == "__main__":
